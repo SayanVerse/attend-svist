@@ -58,11 +58,19 @@ export default function AnalyticsPage() {
 
       const daysInMonth = getDaysInMonth(selectedMonth);
       const holidayCount = holidays?.length || 0;
-      const workingDays = daysInMonth - holidayCount;
+      const today = new Date();
+      const currentMonthEnd = new Date(Math.min(new Date(monthEnd).getTime(), today.getTime()));
+      
+      // Calculate working days only up to today (not future dates)
+      const totalDaysToConsider = selectedMonth.getMonth() === today.getMonth() && selectedMonth.getFullYear() === today.getFullYear()
+        ? today.getDate()
+        : daysInMonth;
+      
+      const workingDays = totalDaysToConsider - holidayCount;
 
       const studentStats = students?.map((student) => {
         const studentAttendance = attendance?.filter(
-          (a) => a.student_id === student.id
+          (a) => a.student_id === student.id && new Date(a.date) <= today
         );
         const present = studentAttendance?.filter((a) => a.status === "present").length || 0;
         const totalMarked = studentAttendance?.length || 0;

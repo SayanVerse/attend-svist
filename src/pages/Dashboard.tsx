@@ -1,11 +1,25 @@
+import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Users, Calendar, CheckCircle, XCircle } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Users, Calendar, CheckCircle, XCircle, Bell, BellOff } from "lucide-react";
 import { format, startOfMonth, endOfMonth } from "date-fns";
+import { motion } from "framer-motion";
+import { useNotifications } from "@/hooks/useNotifications";
+import { cn } from "@/lib/utils";
 
 export default function Dashboard() {
   const today = format(new Date(), "yyyy-MM-dd");
+  const { requestNotificationPermission } = useNotifications();
+  const [notificationEnabled, setNotificationEnabled] = useState(false);
+
+  useEffect(() => {
+    if ("Notification" in window) {
+      setNotificationEnabled(Notification.permission === "granted");
+    }
+  }, []);
+  
   const monthStart = format(startOfMonth(new Date()), "yyyy-MM-dd");
   const monthEnd = format(endOfMonth(new Date()), "yyyy-MM-dd");
 
@@ -91,61 +105,98 @@ export default function Dashboard() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h2 className="text-3xl font-bold tracking-tight">Dashboard</h2>
-        <p className="text-muted-foreground">
-          Overview of your attendance system
-        </p>
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div>
+          <h2 className="text-3xl font-bold tracking-tight">Dashboard</h2>
+          <p className="text-muted-foreground">
+            Overview of your attendance system
+          </p>
+        </div>
+        <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+          <Button
+            variant={notificationEnabled ? "secondary" : "default"}
+            onClick={() => {
+              requestNotificationPermission();
+              setTimeout(() => {
+                if ("Notification" in window) {
+                  setNotificationEnabled(Notification.permission === "granted");
+                }
+              }, 500);
+            }}
+            className="gap-2"
+          >
+            {notificationEnabled ? (
+              <>
+                <Bell className="h-4 w-4" />
+                Notifications On
+              </>
+            ) : (
+              <>
+                <BellOff className="h-4 w-4" />
+                Enable Notifications
+              </>
+            )}
+          </Button>
+        </motion.div>
       </div>
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        {stats.map((stat) => {
+        {stats.map((stat, index) => {
           const Icon = stat.icon;
           return (
-            <Card key={stat.title} className="transition-all hover:shadow-lg">
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">
-                  {stat.title}
-                </CardTitle>
-                <Icon className={cn("h-4 w-4", stat.color)} />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">{stat.value}</div>
-              </CardContent>
-            </Card>
+            <motion.div
+              key={stat.title}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: index * 0.1 }}
+            >
+              <Card className="glass-card transition-all hover:shadow-lg btn-animated">
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium">
+                    {stat.title}
+                  </CardTitle>
+                  <Icon className={cn("h-4 w-4", stat.color)} />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold">{stat.value}</div>
+                </CardContent>
+              </Card>
+            </motion.div>
           );
         })}
       </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Monthly Summary</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <span className="text-sm font-medium">Total Teaching Days</span>
-              <span className="text-2xl font-bold">{monthlyStats?.totalDays || 0}</span>
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.4 }}
+      >
+        <Card className="glass-card">
+          <CardHeader>
+            <CardTitle>Monthly Summary</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <span className="text-sm font-medium">Total Teaching Days</span>
+                <span className="text-2xl font-bold">{monthlyStats?.totalDays || 0}</span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-sm font-medium text-success">Present Records</span>
+                <span className="text-2xl font-bold text-success">{monthlyStats?.presentDays || 0}</span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-sm font-medium text-destructive">Absent Records</span>
+                <span className="text-2xl font-bold text-destructive">{monthlyStats?.absentDays || 0}</span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-sm font-medium text-accent">Holidays</span>
+                <span className="text-2xl font-bold text-accent">{monthlyStats?.holidays || 0}</span>
+              </div>
             </div>
-            <div className="flex items-center justify-between">
-              <span className="text-sm font-medium text-success">Present Records</span>
-              <span className="text-2xl font-bold text-success">{monthlyStats?.presentDays || 0}</span>
-            </div>
-            <div className="flex items-center justify-between">
-              <span className="text-sm font-medium text-destructive">Absent Records</span>
-              <span className="text-2xl font-bold text-destructive">{monthlyStats?.absentDays || 0}</span>
-            </div>
-            <div className="flex items-center justify-between">
-              <span className="text-sm font-medium text-accent">Holidays</span>
-              <span className="text-2xl font-bold text-accent">{monthlyStats?.holidays || 0}</span>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+          </CardContent>
+        </Card>
+      </motion.div>
     </div>
   );
-}
-
-function cn(...classes: string[]) {
-  return classes.filter(Boolean).join(" ");
 }

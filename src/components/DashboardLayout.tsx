@@ -34,13 +34,13 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
       <motion.header 
         initial={{ y: -20, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
-        className="sticky top-0 z-50 w-full border-b glass-card"
+        className="sticky top-0 z-50 w-full border-b backdrop-blur-2xl bg-white/60 dark:bg-card/60 border-white/30 shadow-lg"
       >
         <div className="container flex h-16 items-center justify-between px-4">
           <div className="flex items-center gap-2">
             <motion.div 
               whileHover={{ scale: 1.1, rotate: 5 }}
-              className="h-9 w-9 rounded-xl bg-gradient-to-br from-primary to-primary/60 flex items-center justify-center shadow-md"
+              className="h-9 w-9 rounded-2xl bg-gradient-to-br from-primary to-primary/60 flex items-center justify-center shadow-lg"
             >
               <ClipboardList className="h-5 w-5 text-primary-foreground" />
             </motion.div>
