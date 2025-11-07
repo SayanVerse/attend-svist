@@ -11,6 +11,7 @@ import Students from "./pages/Students";
 import Holidays from "./pages/Holidays";
 import Analytics from "./pages/Analytics";
 import Export from "./pages/Export";
+import Contact from "./pages/Contact";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -30,6 +31,7 @@ const App = () => (
               <Route path="/holidays" element={<Holidays />} />
               <Route path="/analytics" element={<Analytics />} />
               <Route path="/export" element={<Export />} />
+              <Route path="/contact" element={<Contact />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </DashboardLayout>

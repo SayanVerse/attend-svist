@@ -9,6 +9,8 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { ThemeToggle } from "./ThemeToggle";
+import { Footer } from "./Footer";
+import { motion } from "framer-motion";
 
 interface DashboardLayoutProps {
   children: React.ReactNode;
@@ -27,69 +29,93 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
   const location = useLocation();
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-gradient-to-br from-background via-background to-primary/5">
       {/* Header */}
-      <header className="sticky top-0 z-50 w-full border-b bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/60">
+      <motion.header 
+        initial={{ y: -20, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        className="sticky top-0 z-50 w-full border-b glass-card"
+      >
         <div className="container flex h-16 items-center justify-between px-4">
           <div className="flex items-center gap-2">
-            <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-primary to-primary/80 flex items-center justify-center">
+            <motion.div 
+              whileHover={{ scale: 1.1, rotate: 5 }}
+              className="h-9 w-9 rounded-xl bg-gradient-to-br from-primary to-primary/60 flex items-center justify-center shadow-md"
+            >
               <ClipboardList className="h-5 w-5 text-primary-foreground" />
-            </div>
-            <h1 className="text-xl font-bold">AttendPro</h1>
+            </motion.div>
+            <h1 className="text-xl font-bold bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">
+              AttendPro
+            </h1>
           </div>
           <ThemeToggle />
         </div>
-      </header>
+      </motion.header>
 
       <div className="container px-4 py-6">
         {/* Mobile Navigation */}
-        <nav className="mb-6 flex gap-2 overflow-x-auto pb-2 md:hidden">
-          {menuItems.map((item) => {
+        <nav className="mb-6 flex gap-2 overflow-x-auto pb-2 md:hidden scrollbar-hide">
+          {menuItems.map((item, index) => {
             const Icon = item.icon;
             const isActive = location.pathname === item.path;
             return (
-              <Link
+              <motion.div
                 key={item.path}
-                to={item.path}
-                className={cn(
-                  "flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition-colors whitespace-nowrap",
-                  isActive
-                    ? "bg-primary text-primary-foreground"
-                    : "bg-secondary text-secondary-foreground hover:bg-secondary/80"
-                )}
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: index * 0.05 }}
               >
-                <Icon className="h-4 w-4" />
-                {item.title}
-              </Link>
+                <Link
+                  to={item.path}
+                  className={cn(
+                    "flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-medium transition-all whitespace-nowrap btn-animated",
+                    isActive
+                      ? "bg-primary text-primary-foreground shadow-md"
+                      : "glass-card hover:shadow-md"
+                  )}
+                >
+                  <Icon className="h-4 w-4" />
+                  {item.title}
+                </Link>
+              </motion.div>
             );
           })}
         </nav>
 
         {/* Desktop Navigation */}
-        <nav className="mb-8 hidden md:flex md:gap-4">
-          {menuItems.map((item) => {
+        <nav className="mb-8 hidden md:flex md:gap-3">
+          {menuItems.map((item, index) => {
             const Icon = item.icon;
             const isActive = location.pathname === item.path;
             return (
-              <Link
+              <motion.div
                 key={item.path}
-                to={item.path}
-                className={cn(
-                  "flex items-center gap-2 rounded-lg px-4 py-3 text-sm font-medium transition-colors",
-                  isActive
-                    ? "bg-primary text-primary-foreground shadow-md"
-                    : "bg-card text-card-foreground hover:bg-card/80 border"
-                )}
+                initial={{ opacity: 0, y: -20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: index * 0.05 }}
               >
-                <Icon className="h-4 w-4" />
-                {item.title}
-              </Link>
+                <Link
+                  to={item.path}
+                  className={cn(
+                    "flex items-center gap-2 rounded-xl px-4 py-3 text-sm font-medium transition-all btn-animated",
+                    isActive
+                      ? "bg-primary text-primary-foreground shadow-lg"
+                      : "glass-card hover:shadow-md"
+                  )}
+                >
+                  <Icon className="h-4 w-4" />
+                  {item.title}
+                </Link>
+              </motion.div>
             );
           })}
         </nav>
 
         {/* Main Content */}
         <main>{children}</main>
+        
+        {/* Footer */}
+        <Footer />
       </div>
     </div>
   );

@@ -3,20 +3,30 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { toast } from "sonner";
-import { Search, CheckCircle, XCircle, X, CalendarIcon } from "lucide-react";
-import { format } from "date-fns";
+import { Search, CheckCircle, XCircle, X, CalendarIcon, ChevronLeft, ChevronRight, Trash2, Undo2, ArrowUpDown } from "lucide-react";
+import { format, addDays, subDays } from "date-fns";
 import { cn } from "@/lib/utils";
 import type { Student, Attendance } from "@/lib/types";
+import { motion, AnimatePresence } from "framer-motion";
 
 export default function AttendancePage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
+  const [sortBy, setSortBy] = useState<"name" | "roll">("name");
   const [attendanceData, setAttendanceData] = useState<Record<string, { status: 'present' | 'absent'; reason?: string }>>({});
+  const [deletedAttendance, setDeletedAttendance] = useState<Attendance[] | null>(null);
   const queryClient = useQueryClient();
   const currentDate = format(selectedDate, "yyyy-MM-dd");
 
@@ -44,7 +54,7 @@ export default function AttendancePage() {
     },
   });
 
-  const { data: isHoliday } = useQuery({
+  const { data: holiday } = useQuery({
     queryKey: ["holiday", currentDate],
     queryFn: async () => {
       const { data } = await supabase
@@ -52,7 +62,7 @@ export default function AttendancePage() {
         .select("*")
         .eq("date", currentDate)
         .maybeSingle();
-      return !!data;
+      return data;
     },
   });
 
@@ -76,7 +86,7 @@ export default function AttendancePage() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["attendance"] });
-      toast.success("Attendance saved successfully");
+      toast.success("Attendance saved");
     },
     onError: () => {
       toast.error("Failed to save attendance");
@@ -95,7 +105,48 @@ export default function AttendancePage() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["attendance"] });
-      toast.success("Attendance record removed");
+      toast.success("Attendance cleared");
+    },
+  });
+
+  const clearAllAttendanceMutation = useMutation({
+    mutationFn: async () => {
+      const { data, error } = await supabase
+        .from("attendance")
+        .delete()
+        .eq("date", currentDate)
+        .select();
+
+      if (error) throw error;
+      return data as Attendance[];
+    },
+    onSuccess: (data) => {
+      setDeletedAttendance(data);
+      queryClient.invalidateQueries({ queryKey: ["attendance"] });
+      setAttendanceData({});
+      toast.success("All attendance cleared for this date");
+    },
+  });
+
+  const undoDeleteMutation = useMutation({
+    mutationFn: async () => {
+      if (!deletedAttendance) return;
+
+      const { error } = await supabase
+        .from("attendance")
+        .insert(deletedAttendance.map(a => ({
+          student_id: a.student_id,
+          date: a.date,
+          status: a.status,
+          absence_reason: a.absence_reason
+        })));
+
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["attendance"] });
+      setDeletedAttendance(null);
+      toast.success("Attendance restored");
     },
   });
 
@@ -109,11 +160,34 @@ export default function AttendancePage() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["holiday"] });
-      toast.success("Today marked as holiday");
+      toast.success("Marked as holiday");
     },
   });
 
-  const filteredStudents = students?.filter(
+  const unmarkHolidayMutation = useMutation({
+    mutationFn: async () => {
+      const { error } = await supabase
+        .from("holidays")
+        .delete()
+        .eq("date", currentDate);
+
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["holiday"] });
+      toast.success("Holiday removed");
+    },
+  });
+
+  const sortedStudents = students?.slice().sort((a, b) => {
+    if (sortBy === "name") {
+      return a.name.localeCompare(b.name);
+    } else {
+      return a.university_roll.localeCompare(b.university_roll);
+    }
+  });
+
+  const filteredStudents = sortedStudents?.filter(
     (student) =>
       student.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       student.university_roll.toLowerCase().includes(searchQuery.toLowerCase())
@@ -139,148 +213,261 @@ export default function AttendancePage() {
     return existing || attendanceData[studentId];
   };
 
-  if (isHoliday) {
-    return (
-      <div className="space-y-6">
-        <Card className="border-accent">
-          <CardContent className="pt-6">
-            <div className="text-center space-y-4">
-              <div className="text-6xl">🎉</div>
-              <h2 className="text-2xl font-bold">Today is a Holiday!</h2>
-              <p className="text-muted-foreground">
-                Attendance marking is disabled for today.
-              </p>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
+  const goToPreviousDay = () => setSelectedDate(subDays(selectedDate, 1));
+  const goToNextDay = () => setSelectedDate(addDays(selectedDate, 1));
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-        <div>
-          <h2 className="text-3xl font-bold tracking-tight">Daily Attendance</h2>
-          <p className="text-muted-foreground">
-            {format(selectedDate, "EEEE, MMMM d, yyyy")}
-          </p>
+    <motion.div 
+      initial={{ opacity: 0 }} 
+      animate={{ opacity: 1 }} 
+      className="space-y-4 pb-20"
+    >
+      <div className="flex flex-col gap-3">
+        <div className="flex items-center justify-between">
+          <div>
+            <h2 className="text-2xl md:text-3xl font-bold tracking-tight">Daily Attendance</h2>
+            <p className="text-sm text-muted-foreground">
+              {format(selectedDate, "EEEE, MMMM d, yyyy")}
+            </p>
+          </div>
+          {holiday && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => unmarkHolidayMutation.mutate()}
+              className="btn-animated"
+            >
+              Unmark Holiday
+            </Button>
+          )}
         </div>
-        <div className="flex gap-2">
-          <Popover>
-            <PopoverTrigger asChild>
-              <Button variant="outline" className={cn("justify-start text-left font-normal")}>
-                <CalendarIcon className="mr-2 h-4 w-4" />
-                {format(selectedDate, "PPP")}
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent className="w-auto p-0" align="end">
-              <Calendar
-                mode="single"
-                selected={selectedDate}
-                onSelect={(date) => date && setSelectedDate(date)}
-                initialFocus
-                className="pointer-events-auto"
-              />
-            </PopoverContent>
-          </Popover>
-          <Button
-            variant="outline"
-            onClick={() => {
-              const note = prompt("Add a note (optional):");
-              markHolidayMutation.mutate(note || undefined);
-            }}
-          >
-            Mark as Holiday
-          </Button>
+
+        {/* Date Navigation */}
+        <div className="flex flex-wrap gap-2">
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="icon"
+              onClick={goToPreviousDay}
+              className="btn-animated h-9 w-9"
+            >
+              <ChevronLeft className="h-4 w-4" />
+            </Button>
+            
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button variant="outline" className="btn-animated">
+                  <CalendarIcon className="mr-2 h-4 w-4" />
+                  {format(selectedDate, "PPP")}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0" align="center">
+                <Calendar
+                  mode="single"
+                  selected={selectedDate}
+                  onSelect={(date) => date && setSelectedDate(date)}
+                  initialFocus
+                  className="pointer-events-auto"
+                />
+              </PopoverContent>
+            </Popover>
+
+            <Button
+              variant="outline"
+              size="icon"
+              onClick={goToNextDay}
+              className="btn-animated h-9 w-9"
+            >
+              <ChevronRight className="h-4 w-4" />
+            </Button>
+          </div>
+
+          <Select value={sortBy} onValueChange={(value: "name" | "roll") => setSortBy(value)}>
+            <SelectTrigger className="w-[140px] btn-animated">
+              <ArrowUpDown className="mr-2 h-4 w-4" />
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="name">Sort by Name</SelectItem>
+              <SelectItem value="roll">Sort by Roll</SelectItem>
+            </SelectContent>
+          </Select>
+
+          {!holiday && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                const note = prompt("Add a note (optional):");
+                markHolidayMutation.mutate(note || undefined);
+              }}
+              className="btn-animated"
+            >
+              Mark Holiday
+            </Button>
+          )}
+
+          {todayAttendance && todayAttendance.length > 0 && !holiday && (
+            <Button
+              variant="destructive"
+              size="sm"
+              onClick={() => {
+                if (confirm("Clear all attendance for this date?")) {
+                  clearAllAttendanceMutation.mutate();
+                }
+              }}
+              className="btn-animated"
+            >
+              <Trash2 className="h-4 w-4 mr-2" />
+              Clear All
+            </Button>
+          )}
+
+          {deletedAttendance && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => undoDeleteMutation.mutate()}
+              className="btn-animated"
+            >
+              <Undo2 className="h-4 w-4 mr-2" />
+              Undo
+            </Button>
+          )}
         </div>
       </div>
 
+      {/* Search */}
       <div className="relative">
         <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
         <Input
-          placeholder="Search by name or roll number..."
+          placeholder="Search by name or roll..."
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
-          className="pl-9"
+          className="pl-9 pr-9"
         />
+        {searchQuery && (
+          <Button
+            variant="ghost"
+            size="icon"
+            className="absolute right-1 top-1/2 -translate-y-1/2 h-7 w-7"
+            onClick={() => setSearchQuery("")}
+          >
+            <X className="h-4 w-4" />
+          </Button>
+        )}
       </div>
 
+      {/* Holiday Banner */}
+      {holiday && (
+        <Card className="border-accent bg-accent/10">
+          <CardContent className="pt-6">
+            <div className="text-center space-y-2">
+              <div className="text-4xl">🎉</div>
+              <h3 className="text-xl font-bold">Holiday</h3>
+              {holiday.note && (
+                <p className="text-sm text-muted-foreground">{holiday.note}</p>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Student List */}
       {isLoading ? (
         <div className="text-center py-12">Loading students...</div>
       ) : (
-        <div className="grid gap-4">
-          {filteredStudents?.map((student) => {
-            const status = getAttendanceStatus(student.id);
-            const isAbsent = status?.status === 'absent';
-            const isPresent = status?.status === 'present';
+        <AnimatePresence mode="popLayout">
+          <div className="grid gap-3">
+            {filteredStudents?.map((student, index) => {
+              const status = getAttendanceStatus(student.id);
+              const isAbsent = status?.status === 'absent';
+              const isPresent = status?.status === 'present';
 
-            return (
-              <Card key={student.id} className="transition-all hover:shadow-md">
-                <CardContent className="pt-6">
-                  <div className="flex items-start justify-between gap-4">
-                    <div className="flex-1 space-y-1">
-                      <h3 className="font-semibold">{student.name}</h3>
-                      <p className="text-sm text-muted-foreground">
-                        Roll: {student.university_roll} • {student.phone_number}
-                      </p>
-                    </div>
+              return (
+                <motion.div
+                  key={student.id}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, scale: 0.9 }}
+                  transition={{ delay: index * 0.02 }}
+                >
+                  <Card className="glass-card hover:shadow-md transition-all">
+                    <CardContent className="pt-4 pb-4">
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="flex-1 min-w-0">
+                          <h3 className="font-semibold truncate">{student.name}</h3>
+                          <p className="text-xs text-muted-foreground truncate">
+                            Roll: {student.university_roll}
+                          </p>
+                        </div>
 
-                    <div className="flex items-center gap-2">
-                      <Button
-                        size="sm"
-                        variant={isPresent ? "default" : "outline"}
-                        onClick={() => handleStatusChange(student.id, 'present')}
-                        className={isPresent ? "bg-success hover:bg-success/90" : ""}
-                      >
-                        <CheckCircle className="h-4 w-4 mr-1" />
-                        Present
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant={isAbsent ? "default" : "outline"}
-                        onClick={() => handleStatusChange(student.id, 'absent')}
-                        className={isAbsent ? "bg-destructive hover:bg-destructive/90" : ""}
-                      >
-                        <XCircle className="h-4 w-4 mr-1" />
-                        Absent
-                      </Button>
-                      {status && (
-                        <Button
-                          size="sm"
-                          variant="ghost"
-                          onClick={() => {
-                            deleteAttendanceMutation.mutate(student.id);
-                            setAttendanceData(prev => {
-                              const newData = { ...prev };
-                              delete newData[student.id];
-                              return newData;
-                            });
-                          }}
-                        >
-                          <X className="h-4 w-4" />
-                        </Button>
+                        <div className="flex items-center gap-1.5 flex-shrink-0">
+                          <Button
+                            size="sm"
+                            variant={isPresent ? "default" : "outline"}
+                            onClick={() => handleStatusChange(student.id, 'present')}
+                            disabled={!!holiday}
+                            className={cn(
+                              "btn-animated h-8 px-2 text-xs",
+                              isPresent && "bg-success hover:bg-success/90"
+                            )}
+                          >
+                            <CheckCircle className="h-3 w-3 mr-1" />
+                            Present
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant={isAbsent ? "default" : "outline"}
+                            onClick={() => handleStatusChange(student.id, 'absent')}
+                            disabled={!!holiday}
+                            className={cn(
+                              "btn-animated h-8 px-2 text-xs",
+                              isAbsent && "bg-destructive hover:bg-destructive/90"
+                            )}
+                          >
+                            <XCircle className="h-3 w-3 mr-1" />
+                            Absent
+                          </Button>
+                          {status && !holiday && (
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              onClick={() => {
+                                deleteAttendanceMutation.mutate(student.id);
+                                setAttendanceData(prev => {
+                                  const newData = { ...prev };
+                                  delete newData[student.id];
+                                  return newData;
+                                });
+                              }}
+                              className="h-8 w-8 p-0"
+                            >
+                              <X className="h-3 w-3" />
+                            </Button>
+                          )}
+                        </div>
+                      </div>
+
+                      {isAbsent && !holiday && (
+                        <Textarea
+                          placeholder="Reason for absence..."
+                          value={
+                            ('absence_reason' in status ? status.absence_reason : status?.reason) || ""
+                          }
+                          onChange={(e) => handleReasonChange(student.id, e.target.value)}
+                          onBlur={() => saveAttendanceMutation.mutate(student.id)}
+                          className="mt-3 min-h-[60px] text-sm"
+                        />
                       )}
-                    </div>
-                  </div>
-
-                  {isAbsent && (
-                    <Textarea
-                      placeholder="Reason for absence..."
-                      value={
-                        ('absence_reason' in status ? status.absence_reason : status?.reason) || ""
-                      }
-                      onChange={(e) => handleReasonChange(student.id, e.target.value)}
-                      onBlur={() => saveAttendanceMutation.mutate(student.id)}
-                      className="mt-4"
-                    />
-                  )}
-                </CardContent>
-              </Card>
-            );
-          })}
-        </div>
+                    </CardContent>
+                  </Card>
+                </motion.div>
+              );
+            })}
+          </div>
+        </AnimatePresence>
       )}
-    </div>
+    </motion.div>
   );
 }

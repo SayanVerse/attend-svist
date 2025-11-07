@@ -6,8 +6,10 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
-import { FileDown, Calendar, Users, FileSpreadsheet } from "lucide-react";
-import { format } from "date-fns";
+import { FileDown, Calendar, FileSpreadsheet } from "lucide-react";
+import { format, getDaysInMonth, startOfMonth, endOfMonth } from "date-fns";
+import * as XLSX from "xlsx";
+import { motion } from "framer-motion";
 
 export default function ExportPage() {
   const [selectedDate, setSelectedDate] = useState(format(new Date(), "yyyy-MM-dd"));
@@ -23,36 +25,35 @@ export default function ExportPage() {
         `)
         .eq("date", selectedDate);
 
-      if (!attendance || attendance.length === 0) {
-        toast.error("No attendance records found for this date");
+      const { data: allStudents } = await supabase
+        .from("students")
+        .select("*")
+        .order("university_roll");
+
+      if (!allStudents || allStudents.length === 0) {
+        toast.error("No students found");
         return;
       }
 
-      // Create CSV content
-      const headers = ["Student Name", "Roll Number", "Phone", "Status", "Absence Reason"];
-      const rows = attendance.map((record: any) => [
-        record.students.name,
-        record.students.university_roll,
-        record.students.phone_number,
-        record.status,
-        record.absence_reason || "-",
-      ]);
+      const rows = allStudents.map((student) => {
+        const record = attendance?.find((a: any) => a.student_id === student.id);
+        return {
+          "Student Name": student.name,
+          "Roll Number": student.university_roll,
+          "Phone": student.phone_number,
+          "Status": record?.status || "Absent",
+          "Absence Reason": record?.absence_reason || "-",
+        };
+      });
 
-      const csv = [
-        headers.join(","),
-        ...rows.map(row => row.join(","))
-      ].join("\n");
+      const worksheet = XLSX.utils.json_to_sheet(rows);
+      const workbook = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(workbook, worksheet, "Attendance");
 
-      // Download CSV
-      const blob = new Blob([csv], { type: "text/csv" });
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = `attendance_${selectedDate}.csv`;
-      a.click();
-
+      XLSX.writeFile(workbook, `attendance_${selectedDate}.xlsx`);
       toast.success("Daily report exported successfully");
     } catch (error) {
+      console.error(error);
       toast.error("Failed to export daily report");
     }
   };
@@ -60,7 +61,8 @@ export default function ExportPage() {
   const handleExportMonthly = async () => {
     try {
       const monthStart = `${selectedMonth}-01`;
-      const monthEnd = `${selectedMonth}-31`;
+      const monthDate = new Date(selectedMonth + "-01");
+      const monthEnd = format(endOfMonth(monthDate), "yyyy-MM-dd");
 
       const { data: attendance } = await supabase
         .from("attendance")
@@ -71,139 +73,169 @@ export default function ExportPage() {
         .gte("date", monthStart)
         .lte("date", monthEnd);
 
-      if (!attendance || attendance.length === 0) {
-        toast.error("No attendance records found for this month");
+      const { data: allStudents } = await supabase
+        .from("students")
+        .select("*")
+        .order("university_roll");
+
+      const { data: holidays } = await supabase
+        .from("holidays")
+        .select("date")
+        .gte("date", monthStart)
+        .lte("date", monthEnd);
+
+      if (!allStudents || allStudents.length === 0) {
+        toast.error("No students found");
         return;
       }
 
-      // Group by student
+      const daysInMonth = getDaysInMonth(monthDate);
+      const holidayCount = holidays?.length || 0;
+      const workingDays = daysInMonth - holidayCount;
+
       const studentMap = new Map();
-      attendance.forEach((record: any) => {
-        const key = record.student_id;
-        if (!studentMap.has(key)) {
-          studentMap.set(key, {
-            name: record.students.name,
-            roll: record.students.university_roll,
-            present: 0,
-            absent: 0,
-          });
+      allStudents.forEach((student) => {
+        studentMap.set(student.id, {
+          name: student.name,
+          roll: student.university_roll,
+          present: 0,
+          absent: 0,
+        });
+      });
+
+      attendance?.forEach((record: any) => {
+        const student = studentMap.get(record.student_id);
+        if (student) {
+          if (record.status === "present") {
+            student.present++;
+          }
         }
-        const stats = studentMap.get(key);
-        if (record.status === "present") stats.present++;
-        else stats.absent++;
       });
 
-      const headers = ["Student Name", "Roll Number", "Present Days", "Absent Days", "Total", "Percentage"];
       const rows = Array.from(studentMap.values()).map((student: any) => {
-        const total = student.present + student.absent;
-        const percentage = ((student.present / total) * 100).toFixed(1);
-        return [
-          student.name,
-          student.roll,
-          student.present,
-          student.absent,
-          total,
-          `${percentage}%`,
-        ];
+        const absent = workingDays - student.present;
+        const percentage = workingDays > 0 ? ((student.present / workingDays) * 100).toFixed(1) : "0.0";
+        return {
+          "Student Name": student.name,
+          "Roll Number": student.roll,
+          "Present Days": student.present,
+          "Absent Days": absent,
+          "Total Working Days": workingDays,
+          "Attendance %": `${percentage}%`,
+        };
       });
 
-      const csv = [
-        headers.join(","),
-        ...rows.map(row => row.join(","))
-      ].join("\n");
+      const worksheet = XLSX.utils.json_to_sheet(rows);
+      const workbook = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(workbook, worksheet, "Monthly Summary");
 
-      const blob = new Blob([csv], { type: "text/csv" });
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = `monthly_report_${selectedMonth}.csv`;
-      a.click();
-
+      XLSX.writeFile(workbook, `monthly_report_${selectedMonth}.xlsx`);
       toast.success("Monthly report exported successfully");
     } catch (error) {
+      console.error(error);
       toast.error("Failed to export monthly report");
     }
   };
 
   return (
-    <div className="space-y-6">
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      className="space-y-6 pb-20"
+    >
       <div>
-        <h2 className="text-3xl font-bold tracking-tight">Export Data</h2>
-        <p className="text-muted-foreground">
-          Export attendance records to CSV format
+        <h2 className="text-2xl md:text-3xl font-bold tracking-tight">Export Data</h2>
+        <p className="text-sm text-muted-foreground">
+          Export attendance records to Excel format
         </p>
       </div>
 
-      <div className="grid gap-6 md:grid-cols-2">
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Calendar className="h-5 w-5" />
-              Daily Report
-            </CardTitle>
-            <CardDescription>
-              Export attendance for a specific date
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="daily-date">Select Date</Label>
-              <Input
-                id="daily-date"
-                type="date"
-                value={selectedDate}
-                onChange={(e) => setSelectedDate(e.target.value)}
-              />
-            </div>
-            <Button onClick={handleExportDaily} className="w-full">
-              <FileDown className="mr-2 h-4 w-4" />
-              Export Daily Report
-            </Button>
-          </CardContent>
-        </Card>
+      <div className="grid gap-4 md:grid-cols-2">
+        <motion.div
+          initial={{ opacity: 0, x: -20 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ delay: 0.1 }}
+        >
+          <Card className="glass-card">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-lg">
+                <Calendar className="h-5 w-5" />
+                Daily Report
+              </CardTitle>
+              <CardDescription>
+                Export attendance for a specific date
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="daily-date">Select Date</Label>
+                <Input
+                  id="daily-date"
+                  type="date"
+                  value={selectedDate}
+                  onChange={(e) => setSelectedDate(e.target.value)}
+                />
+              </div>
+              <Button onClick={handleExportDaily} className="w-full btn-animated">
+                <FileDown className="mr-2 h-4 w-4" />
+                Export Daily Report (.xlsx)
+              </Button>
+            </CardContent>
+          </Card>
+        </motion.div>
 
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <FileSpreadsheet className="h-5 w-5" />
-              Monthly Report
-            </CardTitle>
-            <CardDescription>
-              Export monthly summary with statistics
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="monthly-date">Select Month</Label>
-              <Input
-                id="monthly-date"
-                type="month"
-                value={selectedMonth}
-                onChange={(e) => setSelectedMonth(e.target.value)}
-              />
-            </div>
-            <Button onClick={handleExportMonthly} className="w-full">
-              <FileDown className="mr-2 h-4 w-4" />
-              Export Monthly Report
-            </Button>
-          </CardContent>
-        </Card>
+        <motion.div
+          initial={{ opacity: 0, x: 20 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ delay: 0.2 }}
+        >
+          <Card className="glass-card">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-lg">
+                <FileSpreadsheet className="h-5 w-5" />
+                Monthly Report
+              </CardTitle>
+              <CardDescription>
+                Export monthly summary with statistics
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="monthly-date">Select Month</Label>
+                <Input
+                  id="monthly-date"
+                  type="month"
+                  value={selectedMonth}
+                  onChange={(e) => setSelectedMonth(e.target.value)}
+                />
+              </div>
+              <Button onClick={handleExportMonthly} className="w-full btn-animated">
+                <FileDown className="mr-2 h-4 w-4" />
+                Export Monthly Report (.xlsx)
+              </Button>
+            </CardContent>
+          </Card>
+        </motion.div>
       </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Users className="h-5 w-5" />
-            About Exports
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-2 text-sm text-muted-foreground">
-          <p>• Daily reports include detailed attendance with absence reasons</p>
-          <p>• Monthly reports provide summary statistics for each student</p>
-          <p>• All exports are in CSV format, compatible with Excel and Google Sheets</p>
-          <p>• Reports include student names, roll numbers, and attendance data</p>
-        </CardContent>
-      </Card>
-    </div>
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.3 }}
+      >
+        <Card className="glass-card">
+          <CardHeader>
+            <CardTitle className="text-lg">About Exports</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-2 text-sm text-muted-foreground">
+            <p>• Daily reports include all students with their attendance status and absence reasons</p>
+            <p>• Monthly reports provide summary statistics for each student</p>
+            <p>• All students appear in exports, even if attendance wasn't marked (counted as absent)</p>
+            <p>• Reports are in Excel (.xlsx) format, compatible with Microsoft Excel and Google Sheets</p>
+            <p>• Monthly reports account for holidays when calculating percentages</p>
+          </CardContent>
+        </Card>
+      </motion.div>
+    </motion.div>
   );
 }
