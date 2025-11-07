@@ -5,16 +5,20 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
+import { Calendar } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { toast } from "sonner";
-import { Search, CheckCircle, XCircle, X } from "lucide-react";
+import { Search, CheckCircle, XCircle, X, CalendarIcon } from "lucide-react";
 import { format } from "date-fns";
+import { cn } from "@/lib/utils";
 import type { Student, Attendance } from "@/lib/types";
 
 export default function AttendancePage() {
   const [searchQuery, setSearchQuery] = useState("");
+  const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const [attendanceData, setAttendanceData] = useState<Record<string, { status: 'present' | 'absent'; reason?: string }>>({});
   const queryClient = useQueryClient();
-  const today = format(new Date(), "yyyy-MM-dd");
+  const currentDate = format(selectedDate, "yyyy-MM-dd");
 
   const { data: students, isLoading } = useQuery({
     queryKey: ["students"],
@@ -29,24 +33,24 @@ export default function AttendancePage() {
   });
 
   const { data: todayAttendance } = useQuery({
-    queryKey: ["attendance", today],
+    queryKey: ["attendance", currentDate],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("attendance")
         .select("*")
-        .eq("date", today);
+        .eq("date", currentDate);
       if (error) throw error;
       return data as Attendance[];
     },
   });
 
   const { data: isHoliday } = useQuery({
-    queryKey: ["holiday", today],
+    queryKey: ["holiday", currentDate],
     queryFn: async () => {
       const { data } = await supabase
         .from("holidays")
         .select("*")
-        .eq("date", today)
+        .eq("date", currentDate)
         .maybeSingle();
       return !!data;
     },
@@ -61,7 +65,7 @@ export default function AttendancePage() {
         .from("attendance")
         .upsert({
           student_id: studentId,
-          date: today,
+          date: currentDate,
           status: record.status,
           absence_reason: record.status === 'absent' ? record.reason : null,
         }, {
@@ -85,7 +89,7 @@ export default function AttendancePage() {
         .from("attendance")
         .delete()
         .eq("student_id", studentId)
-        .eq("date", today);
+        .eq("date", currentDate);
 
       if (error) throw error;
     },
@@ -99,7 +103,7 @@ export default function AttendancePage() {
     mutationFn: async (note?: string) => {
       const { error } = await supabase
         .from("holidays")
-        .insert({ date: today, note });
+        .insert({ date: currentDate, note });
 
       if (error) throw error;
     },
@@ -159,18 +163,37 @@ export default function AttendancePage() {
         <div>
           <h2 className="text-3xl font-bold tracking-tight">Daily Attendance</h2>
           <p className="text-muted-foreground">
-            {format(new Date(), "EEEE, MMMM d, yyyy")}
+            {format(selectedDate, "EEEE, MMMM d, yyyy")}
           </p>
         </div>
-        <Button
-          variant="outline"
-          onClick={() => {
-            const note = prompt("Add a note (optional):");
-            markHolidayMutation.mutate(note || undefined);
-          }}
-        >
-          Mark Today as Holiday
-        </Button>
+        <div className="flex gap-2">
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button variant="outline" className={cn("justify-start text-left font-normal")}>
+                <CalendarIcon className="mr-2 h-4 w-4" />
+                {format(selectedDate, "PPP")}
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-auto p-0" align="end">
+              <Calendar
+                mode="single"
+                selected={selectedDate}
+                onSelect={(date) => date && setSelectedDate(date)}
+                initialFocus
+                className="pointer-events-auto"
+              />
+            </PopoverContent>
+          </Popover>
+          <Button
+            variant="outline"
+            onClick={() => {
+              const note = prompt("Add a note (optional):");
+              markHolidayMutation.mutate(note || undefined);
+            }}
+          >
+            Mark as Holiday
+          </Button>
+        </div>
       </div>
 
       <div className="relative">

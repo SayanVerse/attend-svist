@@ -13,8 +13,41 @@ import {
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
-import { Search, Plus, Edit, Trash2, User } from "lucide-react";
+import { Search, Plus, Edit, Trash2, User, Upload } from "lucide-react";
 import type { Student } from "@/lib/types";
+
+const SEED_STUDENTS = [
+  { roll: "24100124031", name: "SAYAN MAITI", phone: "9609800163" },
+  { roll: "24100124032", name: "SAYAN PORIA", phone: "8972154339" },
+  { roll: "24100124033", name: "SAYAN SAU", phone: "9933696766" },
+  { roll: "24100124034", name: "SAYANDEEP GURIA", phone: "8944824435" },
+  { roll: "24100124035", name: "SHAYNA MANDAL", phone: "8100048180" },
+  { roll: "24100124036", name: "SHIROPA KUNDU", phone: "9147056136" },
+  { roll: "24100124037", name: "SUPARNA GHOSH", phone: "7810978879" },
+  { roll: "24100124038", name: "SUVANKAR MAITY", phone: "8927767452" },
+  { roll: "24100124039", name: "SUBHADIP GUCHHAIT", phone: "6295613750" },
+  { roll: "24100124040", name: "SUBHAMOY ADHIKARY", phone: "9432388748" },
+  { roll: "24100124041", name: "SUBHRANIL JANA", phone: "8777032056" },
+  { roll: "24100124042", name: "SUDIP BHUNIA", phone: "9332856782" },
+  { roll: "24100124043", name: "SUDIPTA DEY", phone: "6296041299" },
+  { roll: "24100124044", name: "SUDIPTYO DAS", phone: "8017948509" },
+  { roll: "24100124045", name: "SUKANYA JHANJ", phone: "9674615887" },
+  { roll: "24100124046", name: "SUMAN DAS", phone: "9733757133" },
+  { roll: "24100124047", name: "SWAPNANEEL CHAKRABORTY", phone: "7890371878" },
+  { roll: "24100124048", name: "SWASTIKA ROY CHOWDHURY", phone: "9903841259" },
+  { roll: "24100124049", name: "TAMALIKA DAS", phone: "9832491319" },
+  { roll: "24100124050", name: "TANUMOY DEY", phone: "7439687217" },
+  { roll: "24100124051", name: "TRITHA MONDAL", phone: "8100073740" },
+  { roll: "24100124052", name: "VIKRAM KUMAR", phone: "9748293212" },
+  { roll: "24100124053", name: "ROHIT KUMAR", phone: "9903105550" },
+  { roll: "24100124054", name: "ROHIT SHARMA", phone: "7004329163" },
+  { roll: "24100124055", name: "PAPIYA MONDAL", phone: "9933633613" },
+  { roll: "24100124056", name: "PITU GUCHHAIT", phone: "9339438728" },
+  { roll: "24100124057", name: "PRATIK ACHARYA", phone: "6295617917" },
+  { roll: "24100124058", name: "PRIOTOSH CHAKRABARTY", phone: "8910073181" },
+  { roll: "24100124059", name: "PRIYANKA PRAMANIK", phone: "6294535628" },
+  { roll: "24100124060", name: "MD ASFAQUE ALAM", phone: "9832736893" }
+];
 
 export default function StudentsPage() {
   const [searchQuery, setSearchQuery] = useState("");
@@ -86,6 +119,32 @@ export default function StudentsPage() {
     },
   });
 
+  const seedStudentsMutation = useMutation({
+    mutationFn: async () => {
+      const studentsToInsert = SEED_STUDENTS.map(s => ({
+        university_roll: s.roll,
+        name: s.name,
+        phone_number: s.phone
+      }));
+
+      const { error } = await supabase
+        .from("students")
+        .upsert(studentsToInsert, {
+          onConflict: 'university_roll',
+          ignoreDuplicates: true
+        });
+      
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["students"] });
+      toast.success("Students imported successfully");
+    },
+    onError: () => {
+      toast.error("Failed to import students");
+    },
+  });
+
   const resetForm = () => {
     setFormData({ name: "", university_roll: "", phone_number: "" });
     setEditingStudent(null);
@@ -126,13 +185,22 @@ export default function StudentsPage() {
             Manage your student database
           </p>
         </div>
-        <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-          <DialogTrigger asChild>
-            <Button onClick={() => resetForm()}>
-              <Plus className="mr-2 h-4 w-4" />
-              Add Student
-            </Button>
-          </DialogTrigger>
+        <div className="flex gap-2">
+          <Button 
+            variant="outline"
+            onClick={() => seedStudentsMutation.mutate()}
+            disabled={seedStudentsMutation.isPending}
+          >
+            <Upload className="h-4 w-4 mr-2" />
+            Import 30 Students
+          </Button>
+          <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+            <DialogTrigger asChild>
+              <Button onClick={() => resetForm()}>
+                <Plus className="mr-2 h-4 w-4" />
+                Add Student
+              </Button>
+            </DialogTrigger>
           <DialogContent>
             <DialogHeader>
               <DialogTitle>
@@ -184,7 +252,8 @@ export default function StudentsPage() {
               </div>
             </form>
           </DialogContent>
-        </Dialog>
+          </Dialog>
+        </div>
       </div>
 
       <div className="relative">

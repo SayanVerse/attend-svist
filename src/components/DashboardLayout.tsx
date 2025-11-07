@@ -35,7 +35,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
             <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-primary to-primary/80 flex items-center justify-center">
               <ClipboardList className="h-5 w-5 text-primary-foreground" />
             </div>
-            <h1 className="text-xl font-bold">Teach Log Suite</h1>
+            <h1 className="text-xl font-bold">AttendPro</h1>
           </div>
           <ThemeToggle />
         </div>
