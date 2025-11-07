@@ -471,9 +471,7 @@ export default function AttendancePage() {
                       {isAbsent && !holiday && (
                         <Textarea
                           placeholder="Reason for absence..."
-                          value={
-                            ('absence_reason' in status ? status.absence_reason : status?.reason) || ""
-                          }
+                          value={attendanceData[student.id]?.reason || ""}
                           onChange={(e) => handleReasonChange(student.id, e.target.value)}
                           onBlur={() => saveAttendanceMutation.mutate(student.id)}
                           className="mt-3 min-h-[60px] text-sm"

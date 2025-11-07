@@ -15,7 +15,7 @@ export default function ContactPage() {
       icon: Mail,
       label: "Email",
       value: "sayan.official.2024@gmail.com",
-      href: "mailto:sayan.official.2024@gmail.com",
+      href: `mailto:${encodeURIComponent("sayan.official.2024@gmail.com")}?subject=${encodeURIComponent("Inquiry from AttendPro")}`,
       color: "text-destructive"
     },
     {
@@ -29,7 +29,7 @@ export default function ContactPage() {
       icon: MessageCircle,
       label: "WhatsApp",
       value: "9609800163",
-      href: "https://wa.me/919609800163",
+      href: `https://wa.me/919609800163?text=${encodeURIComponent("Hello, I'm contacting you from AttendPro")}`,
       color: "text-success"
     }
   ];

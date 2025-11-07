@@ -9,13 +9,13 @@ const buttonVariants = cva(
   {
     variants: {
       variant: {
-        default: "bg-primary text-primary-foreground hover:bg-primary/90 shadow-md",
-        destructive: "bg-destructive text-destructive-foreground hover:bg-destructive/90 shadow-md",
-        outline: "border border-input backdrop-blur-md bg-background/60 hover:bg-accent/80 hover:text-accent-foreground shadow-sm",
-        secondary: "backdrop-blur-md bg-secondary/70 text-secondary-foreground hover:bg-secondary/90 shadow-md border border-white/20",
-        ghost: "hover:bg-accent/50 hover:text-accent-foreground backdrop-blur-sm",
-        link: "text-primary underline-offset-4 hover:underline",
-        glass: "backdrop-blur-md bg-white/40 dark:bg-card/40 border border-white/30 shadow-md hover:bg-white/60 dark:hover:bg-card/60",
+        default: "bg-primary text-primary-foreground hover:bg-primary/90 hover:text-primary-foreground shadow-md",
+        destructive: "bg-destructive text-destructive-foreground hover:bg-destructive/90 hover:text-destructive-foreground shadow-md",
+        outline: "border border-input backdrop-blur-md bg-background/60 text-foreground hover:bg-accent/80 hover:text-accent-foreground shadow-sm",
+        secondary: "backdrop-blur-md bg-secondary/70 text-secondary-foreground hover:bg-secondary/90 hover:text-secondary-foreground shadow-md border border-white/20",
+        ghost: "text-foreground hover:bg-accent/50 hover:text-accent-foreground backdrop-blur-sm",
+        link: "text-primary underline-offset-4 hover:underline hover:text-primary",
+        glass: "backdrop-blur-md bg-white/40 dark:bg-card/40 text-foreground border border-white/30 shadow-md hover:bg-white/60 dark:hover:bg-card/60 hover:text-foreground",
       },
       size: {
         default: "h-10 px-4 py-2",

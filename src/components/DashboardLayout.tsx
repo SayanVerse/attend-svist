@@ -12,6 +12,8 @@ import { ThemeToggle } from "./ThemeToggle";
 import { Footer } from "./Footer";
 import { ScrollToTop } from "./ScrollToTop";
 import { motion } from "framer-motion";
+import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
+import { AppSidebar } from "./AppSidebar";
 
 interface DashboardLayoutProps {
   children: React.ReactNode;
@@ -30,97 +32,78 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
   const location = useLocation();
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background via-background to-primary/5">
-      {/* Header */}
-      <motion.header 
-        initial={{ y: -20, opacity: 0 }}
-        animate={{ y: 0, opacity: 1 }}
-        className="sticky top-0 z-50 w-full border-b backdrop-blur-2xl bg-white/60 dark:bg-card/60 border-white/30 shadow-lg"
-      >
-        <div className="container flex h-16 items-center justify-between px-4">
-          <div className="flex items-center gap-2">
-            <motion.div 
-              whileHover={{ scale: 1.1, rotate: 5 }}
-              className="h-10 w-10 rounded-full bg-gradient-to-br from-primary to-primary/60 flex items-center justify-center shadow-lg"
-            >
-              <ClipboardList className="h-5 w-5 text-primary-foreground" />
-            </motion.div>
-            <h1 className="text-xl font-bold bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">
-              AttendPro
-            </h1>
-          </div>
-          <ThemeToggle />
-        </div>
-      </motion.header>
-
-      <div className="container px-4 py-6">
-        {/* Mobile Navigation */}
-        <nav className="mb-6 flex gap-2 overflow-x-auto pb-2 md:hidden scrollbar-hide">
-          {menuItems.map((item, index) => {
-            const Icon = item.icon;
-            const isActive = location.pathname === item.path;
-            return (
-              <motion.div
-                key={item.path}
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: index * 0.05 }}
-              >
-                <Link
-                  to={item.path}
-                  className={cn(
-                    "flex items-center gap-2 rounded-full px-5 py-2.5 text-sm font-medium transition-all whitespace-nowrap btn-animated",
-                    isActive
-                      ? "bg-primary text-primary-foreground shadow-md"
-                      : "glass-card hover:shadow-md"
-                  )}
-                >
-                  <Icon className="h-4 w-4" />
-                  {item.title}
-                </Link>
-              </motion.div>
-            );
-          })}
-        </nav>
-
-        {/* Desktop Navigation */}
-        <nav className="mb-8 hidden md:flex md:gap-3">
-          {menuItems.map((item, index) => {
-            const Icon = item.icon;
-            const isActive = location.pathname === item.path;
-            return (
-              <motion.div
-                key={item.path}
-                initial={{ opacity: 0, y: -20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: index * 0.05 }}
-              >
-                <Link
-                  to={item.path}
-                  className={cn(
-                    "flex items-center gap-2 rounded-full px-5 py-3 text-sm font-medium transition-all btn-animated",
-                    isActive
-                      ? "bg-primary text-primary-foreground shadow-lg"
-                      : "glass-card hover:shadow-md"
-                  )}
-                >
-                  <Icon className="h-4 w-4" />
-                  {item.title}
-                </Link>
-              </motion.div>
-            );
-          })}
-        </nav>
-
-        {/* Main Content */}
-        <main>{children}</main>
+    <SidebarProvider>
+      <div className="min-h-screen bg-gradient-to-br from-background via-background to-primary/5 w-full flex">
+        {/* Mobile Sidebar */}
+        <AppSidebar />
         
-        {/* Footer */}
-        <Footer />
+        <div className="flex-1 flex flex-col w-full">
+          {/* Header */}
+          <motion.header 
+            initial={{ y: -20, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            className="sticky top-0 z-50 w-full border-b backdrop-blur-3xl bg-white/40 dark:bg-card/40 border-white/30 shadow-lg"
+          >
+            <div className="container flex h-16 items-center justify-between px-4">
+              <div className="flex items-center gap-2">
+                <motion.div 
+                  whileHover={{ scale: 1.1, rotate: 5 }}
+                  className="h-10 w-10 rounded-full bg-gradient-to-br from-primary to-primary/60 flex items-center justify-center shadow-lg"
+                >
+                  <ClipboardList className="h-5 w-5 text-primary-foreground" />
+                </motion.div>
+                <h1 className="text-xl font-bold bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">
+                  AttendPro
+                </h1>
+              </div>
+              <div className="flex items-center gap-2">
+                <ThemeToggle />
+                <SidebarTrigger className="md:hidden" />
+              </div>
+            </div>
+          </motion.header>
+
+          <div className="container px-4 py-6 flex-1">
+            {/* Desktop Navigation */}
+            <nav className="mb-8 hidden md:flex md:gap-3">
+              {menuItems.map((item, index) => {
+                const Icon = item.icon;
+                const isActive = location.pathname === item.path;
+                return (
+                  <motion.div
+                    key={item.path}
+                    initial={{ opacity: 0, y: -20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: index * 0.05 }}
+                  >
+                    <Link
+                      to={item.path}
+                      className={cn(
+                        "flex items-center gap-2 rounded-full px-5 py-3 text-sm font-medium transition-all btn-animated",
+                        isActive
+                          ? "bg-primary text-primary-foreground shadow-lg"
+                          : "glass-card hover:shadow-md"
+                      )}
+                    >
+                      <Icon className="h-4 w-4" />
+                      {item.title}
+                    </Link>
+                  </motion.div>
+                );
+              })}
+            </nav>
+
+            {/* Main Content */}
+            <main>{children}</main>
+            
+            {/* Footer */}
+            <Footer />
+          </div>
+        </div>
+        
+        {/* Scroll to Top */}
+        <ScrollToTop />
       </div>
-      
-      {/* Scroll to Top */}
-      <ScrollToTop />
-    </div>
+    </SidebarProvider>
   );
 }
