@@ -127,10 +127,19 @@ All colors MUST be HSL.
 
 @layer components {
   .glass-card {
-    @apply backdrop-blur-md bg-white/80 dark:bg-card/80 border border-white/20 shadow-glass;
+    @apply backdrop-blur-md bg-white/80 dark:bg-card/80 border border-white/20 shadow-md;
   }
   
   .btn-animated {
     @apply transition-all duration-300 hover:scale-105 active:scale-95;
+  }
+  
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
   }
 }
