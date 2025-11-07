@@ -39,7 +39,7 @@ All colors MUST be HSL.
     --input: 213 20% 88%;
     --ring: 180 83% 45%;
 
-    --radius: 1.5rem;
+    --radius: 3rem;
 
     --gradient-primary: linear-gradient(135deg, hsl(180 83% 45%) 0%, hsl(180 83% 35%) 100%);
     --gradient-card: linear-gradient(145deg, rgba(255, 255, 255, 0.9) 0%, rgba(255, 255, 255, 0.7) 100%);
@@ -127,15 +127,15 @@ All colors MUST be HSL.
 
 @layer components {
   .glass-card {
-    @apply backdrop-blur-xl bg-white/70 dark:bg-card/70 border border-white/30 shadow-lg rounded-2xl;
+    @apply backdrop-blur-xl bg-white/70 dark:bg-card/70 border border-white/30 shadow-lg rounded-[2rem];
   }
   
   .glass-button {
-    @apply backdrop-blur-md bg-white/40 dark:bg-card/40 border border-white/30 shadow-md rounded-xl hover:bg-white/60 dark:hover:bg-card/60 transition-all duration-300;
+    @apply backdrop-blur-md bg-white/40 dark:bg-card/40 border border-white/30 shadow-md rounded-full hover:bg-white/60 dark:hover:bg-card/60 transition-all duration-300;
   }
   
   .btn-animated {
-    @apply transition-all duration-300 hover:scale-105 active:scale-95 rounded-xl;
+    @apply transition-all duration-300 hover:scale-105 active:scale-95 rounded-full;
   }
   
   .scrollbar-hide {

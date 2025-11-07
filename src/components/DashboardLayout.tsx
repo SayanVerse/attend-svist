@@ -40,7 +40,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
           <div className="flex items-center gap-2">
             <motion.div 
               whileHover={{ scale: 1.1, rotate: 5 }}
-              className="h-9 w-9 rounded-2xl bg-gradient-to-br from-primary to-primary/60 flex items-center justify-center shadow-lg"
+              className="h-10 w-10 rounded-full bg-gradient-to-br from-primary to-primary/60 flex items-center justify-center shadow-lg"
             >
               <ClipboardList className="h-5 w-5 text-primary-foreground" />
             </motion.div>
@@ -68,7 +68,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
                 <Link
                   to={item.path}
                   className={cn(
-                    "flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-medium transition-all whitespace-nowrap btn-animated",
+                    "flex items-center gap-2 rounded-full px-5 py-2.5 text-sm font-medium transition-all whitespace-nowrap btn-animated",
                     isActive
                       ? "bg-primary text-primary-foreground shadow-md"
                       : "glass-card hover:shadow-md"
@@ -97,7 +97,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
                 <Link
                   to={item.path}
                   className={cn(
-                    "flex items-center gap-2 rounded-xl px-4 py-3 text-sm font-medium transition-all btn-animated",
+                    "flex items-center gap-2 rounded-full px-5 py-3 text-sm font-medium transition-all btn-animated",
                     isActive
                       ? "bg-primary text-primary-foreground shadow-lg"
                       : "glass-card hover:shadow-md"
