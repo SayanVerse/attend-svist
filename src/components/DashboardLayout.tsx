@@ -10,6 +10,7 @@ import {
 import { cn } from "@/lib/utils";
 import { ThemeToggle } from "./ThemeToggle";
 import { Footer } from "./Footer";
+import { ScrollToTop } from "./ScrollToTop";
 import { motion } from "framer-motion";
 
 interface DashboardLayoutProps {
@@ -117,6 +118,9 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
         {/* Footer */}
         <Footer />
       </div>
+      
+      {/* Scroll to Top */}
+      <ScrollToTop />
     </div>
   );
 }

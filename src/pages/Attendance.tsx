@@ -20,6 +20,7 @@ import { format, addDays, subDays } from "date-fns";
 import { cn } from "@/lib/utils";
 import type { Student, Attendance } from "@/lib/types";
 import { motion, AnimatePresence } from "framer-motion";
+import { useSwipeGesture } from "@/hooks/useSwipeGesture";
 
 export default function AttendancePage() {
   const [searchQuery, setSearchQuery] = useState("");
@@ -29,6 +30,12 @@ export default function AttendancePage() {
   const [deletedAttendance, setDeletedAttendance] = useState<Attendance[] | null>(null);
   const queryClient = useQueryClient();
   const currentDate = format(selectedDate, "yyyy-MM-dd");
+
+  // Swipe gestures for date navigation
+  useSwipeGesture({
+    onSwipeLeft: () => setSelectedDate(addDays(selectedDate, 1)),
+    onSwipeRight: () => setSelectedDate(subDays(selectedDate, 1)),
+  });
 
   const { data: students, isLoading } = useQuery({
     queryKey: ["students"],
@@ -360,7 +367,7 @@ export default function AttendancePage() {
 
       {/* Holiday Banner */}
       {holiday && (
-        <Card className="border-accent bg-accent/10">
+        <Card className="border-accent bg-accent/10 rounded-[1.5rem]">
           <CardContent className="pt-6">
             <div className="text-center space-y-2">
               <div className="text-4xl">🎉</div>
@@ -368,6 +375,18 @@ export default function AttendancePage() {
               {holiday.note && (
                 <p className="text-sm text-muted-foreground">{holiday.note}</p>
               )}
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  if (confirm("Unmark this day as holiday?")) {
+                    unmarkHolidayMutation.mutate();
+                  }
+                }}
+                className="btn-animated mt-2"
+              >
+                Unmark Holiday
+              </Button>
             </div>
           </CardContent>
         </Card>
@@ -392,7 +411,7 @@ export default function AttendancePage() {
                   exit={{ opacity: 0, scale: 0.9 }}
                   transition={{ delay: index * 0.02 }}
                 >
-                  <Card className="glass-card hover:shadow-md transition-all">
+                  <Card className="glass-card hover:shadow-md transition-all rounded-[1.5rem]">
                     <CardContent className="pt-4 pb-4">
                       <div className="flex items-start justify-between gap-3">
                         <div className="flex-1 min-w-0">

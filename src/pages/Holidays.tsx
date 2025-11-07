@@ -137,7 +137,7 @@ export default function HolidaysPage() {
       ) : (
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
           {holidays?.map((holiday) => (
-            <Card key={holiday.id} className="transition-all hover:shadow-md border-accent/20">
+            <Card key={holiday.id} className="transition-all hover:shadow-md border-accent/20 rounded-[1.5rem]">
               <CardContent className="pt-6">
                 <div className="flex items-start justify-between">
                   <div className="flex items-start gap-3">

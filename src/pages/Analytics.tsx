@@ -57,16 +57,27 @@ export default function AnalyticsPage() {
         .lte("date", monthEnd);
 
       const daysInMonth = getDaysInMonth(selectedMonth);
-      const holidayCount = holidays?.length || 0;
       const today = new Date();
-      const currentMonthEnd = new Date(Math.min(new Date(monthEnd).getTime(), today.getTime()));
+      today.setHours(0, 0, 0, 0); // Reset time for accurate comparison
+      
+      // Only count holidays that have already occurred (up to today)
+      const holidaysUpToToday = holidays?.filter(h => new Date(h.date) <= today) || [];
+      const holidayCount = holidaysUpToToday.length;
       
       // Calculate working days only up to today (not future dates)
-      const totalDaysToConsider = selectedMonth.getMonth() === today.getMonth() && selectedMonth.getFullYear() === today.getFullYear()
-        ? today.getDate()
-        : daysInMonth;
+      let totalDaysToConsider: number;
+      if (selectedMonth.getMonth() === today.getMonth() && selectedMonth.getFullYear() === today.getFullYear()) {
+        // Current month: only count days up to today
+        totalDaysToConsider = today.getDate();
+      } else if (selectedMonth > today) {
+        // Future month: no working days yet
+        totalDaysToConsider = 0;
+      } else {
+        // Past month: count all days
+        totalDaysToConsider = daysInMonth;
+      }
       
-      const workingDays = totalDaysToConsider - holidayCount;
+      const workingDays = Math.max(0, totalDaysToConsider - holidayCount);
 
       const studentStats = students?.map((student) => {
         const studentAttendance = attendance?.filter(
@@ -74,8 +85,8 @@ export default function AnalyticsPage() {
         );
         const present = studentAttendance?.filter((a) => a.status === "present").length || 0;
         const totalMarked = studentAttendance?.length || 0;
-        const absent = workingDays - present;
-        const percentage = workingDays > 0 ? ((present / workingDays) * 100).toFixed(1) : "0.0";
+        const absent = Math.max(0, workingDays - present);
+        const percentage = workingDays > 0 ? Math.min(100, ((present / workingDays) * 100)).toFixed(1) : "0.0";
 
         return {
           ...student,
@@ -245,7 +256,7 @@ export default function AnalyticsPage() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: index * 0.02 }}
           >
-            <Card className="glass-card hover:shadow-md transition-all">
+            <Card className="glass-card hover:shadow-md transition-all rounded-[1.5rem]">
               <CardHeader className="pb-3">
                 <CardTitle className="text-base flex items-center justify-between">
                   <div>
@@ -310,7 +321,7 @@ export default function AnalyticsPage() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: index * 0.02 }}
           >
-            <Card className="glass-card">
+            <Card className="glass-card rounded-[1.5rem]">
               <CardContent className="pt-4 pb-4">
                 <div className="flex items-center justify-between">
                   <div>

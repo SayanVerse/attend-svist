@@ -258,7 +258,7 @@ export default function StudentsPage() {
                 exit={{ opacity: 0, scale: 0.9 }}
                 transition={{ delay: index * 0.02 }}
               >
-                <Card className="glass-card hover:shadow-md transition-all">
+                <Card className="glass-card hover:shadow-md transition-all rounded-[1.5rem]">
                   <CardContent className="pt-4 pb-4">
                     <div className="flex items-start justify-between gap-3">
                       <div className="flex items-start gap-3 flex-1 min-w-0">
