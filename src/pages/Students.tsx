@@ -141,108 +141,110 @@ export default function StudentsPage() {
       animate={{ opacity: 1 }}
       className="space-y-4 pb-20"
     >
-      <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-        <div>
-          <h2 className="text-2xl md:text-3xl font-bold tracking-tight">Students</h2>
-          <p className="text-sm text-muted-foreground">
-            Manage your student database
-          </p>
+      <div className="flex flex-col gap-4">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+          <div>
+            <h2 className="text-2xl md:text-3xl font-bold tracking-tight">Students</h2>
+            <p className="text-sm text-muted-foreground">
+              Manage your student database
+            </p>
+          </div>
+          <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+            <DialogTrigger asChild>
+              <Button onClick={() => resetForm()} className="btn-animated w-full sm:w-auto">
+                <Plus className="mr-2 h-4 w-4" />
+                Add Student
+              </Button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>
+                  {editingStudent ? "Edit Student" : "Add New Student"}
+                </DialogTitle>
+              </DialogHeader>
+              <form onSubmit={handleSubmit} className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="name">Full Name</Label>
+                  <Input
+                    id="name"
+                    value={formData.name}
+                    onChange={(e) =>
+                      setFormData({ ...formData, name: e.target.value })
+                    }
+                    required
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="roll">University Roll Number</Label>
+                  <Input
+                    id="roll"
+                    value={formData.university_roll}
+                    onChange={(e) =>
+                      setFormData({ ...formData, university_roll: e.target.value })
+                    }
+                    required
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="phone">Phone Number</Label>
+                  <Input
+                    id="phone"
+                    value={formData.phone_number}
+                    onChange={(e) =>
+                      setFormData({ ...formData, phone_number: e.target.value })
+                    }
+                    required
+                  />
+                </div>
+                <div className="flex gap-2">
+                  <Button type="submit" className="flex-1 btn-animated">
+                    {editingStudent ? "Update" : "Add"} Student
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={resetForm}
+                    className="btn-animated"
+                  >
+                    Cancel
+                  </Button>
+                </div>
+              </form>
+            </DialogContent>
+          </Dialog>
         </div>
-        <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-          <DialogTrigger asChild>
-            <Button onClick={() => resetForm()} className="btn-animated">
-              <Plus className="mr-2 h-4 w-4" />
-              Add Student
-            </Button>
-          </DialogTrigger>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>
-                {editingStudent ? "Edit Student" : "Add New Student"}
-              </DialogTitle>
-            </DialogHeader>
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="name">Full Name</Label>
-                <Input
-                  id="name"
-                  value={formData.name}
-                  onChange={(e) =>
-                    setFormData({ ...formData, name: e.target.value })
-                  }
-                  required
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="roll">University Roll Number</Label>
-                <Input
-                  id="roll"
-                  value={formData.university_roll}
-                  onChange={(e) =>
-                    setFormData({ ...formData, university_roll: e.target.value })
-                  }
-                  required
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="phone">Phone Number</Label>
-                <Input
-                  id="phone"
-                  value={formData.phone_number}
-                  onChange={(e) =>
-                    setFormData({ ...formData, phone_number: e.target.value })
-                  }
-                  required
-                />
-              </div>
-              <div className="flex gap-2">
-                <Button type="submit" className="flex-1 btn-animated">
-                  {editingStudent ? "Update" : "Add"} Student
-                </Button>
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={resetForm}
-                  className="btn-animated"
-                >
-                  Cancel
-                </Button>
-              </div>
-            </form>
-          </DialogContent>
-        </Dialog>
-      </div>
 
-      <div className="flex gap-2">
-        <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-          <Input
-            placeholder="Search by name, roll, or phone..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-9 pr-9"
-          />
-          {searchQuery && (
-            <Button
-              variant="ghost"
-              size="icon"
-              className="absolute right-1 top-1/2 -translate-y-1/2 h-7 w-7"
-              onClick={() => setSearchQuery("")}
-            >
-              <X className="h-4 w-4" />
-            </Button>
-          )}
+        <div className="flex gap-2">
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              placeholder="Search by name, roll, or phone..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-9 pr-9"
+            />
+            {searchQuery && (
+              <Button
+                variant="ghost"
+                size="icon"
+                className="absolute right-1 top-1/2 -translate-y-1/2 h-7 w-7"
+                onClick={() => setSearchQuery("")}
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            )}
+          </div>
+          <Select value={sortBy} onValueChange={(value: "name" | "roll") => setSortBy(value)}>
+            <SelectTrigger className="w-[140px] btn-animated">
+              <ArrowUpDown className="mr-2 h-4 w-4" />
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="name">Sort by Name</SelectItem>
+              <SelectItem value="roll">Sort by Roll</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
-        <Select value={sortBy} onValueChange={(value: "name" | "roll") => setSortBy(value)}>
-          <SelectTrigger className="w-[140px] btn-animated">
-            <ArrowUpDown className="mr-2 h-4 w-4" />
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="name">Sort by Name</SelectItem>
-            <SelectItem value="roll">Sort by Roll</SelectItem>
-          </SelectContent>
-        </Select>
       </div>
 
       {isLoading ? (
@@ -260,41 +262,43 @@ export default function StudentsPage() {
               >
                 <Card className="glass-card hover:shadow-md transition-all rounded-[1.5rem]">
                   <CardContent className="pt-4 pb-4">
-                    <div className="flex items-start justify-between gap-3">
+                    <div className="flex flex-col sm:flex-row sm:items-start gap-3">
                       <div className="flex items-start gap-3 flex-1 min-w-0">
                         <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
                           <User className="h-5 w-5 text-primary" />
                         </div>
                         <div className="flex-1 min-w-0">
-                          <h3 className="font-semibold truncate">{student.name}</h3>
+                          <h3 className="font-semibold text-sm md:text-base truncate">{student.name}</h3>
                           <p className="text-xs text-muted-foreground truncate">
                             Roll: {student.university_roll}
                           </p>
-                          <p className="text-xs text-muted-foreground">
+                          <p className="text-xs text-muted-foreground truncate">
                             Phone: {student.phone_number}
                           </p>
                         </div>
                       </div>
-                      <div className="flex gap-1 flex-shrink-0">
+                      <div className="flex gap-2 flex-shrink-0 w-full sm:w-auto">
                         <Button
                           size="sm"
-                          variant="ghost"
+                          variant="outline"
                           onClick={() => handleEdit(student)}
-                          className="h-8 w-8 p-0 btn-animated"
+                          className="flex-1 sm:flex-none btn-animated"
                         >
-                          <Edit className="h-3.5 w-3.5" />
+                          <Edit className="h-3.5 w-3.5 sm:mr-2" />
+                          <span className="hidden sm:inline">Edit</span>
                         </Button>
                         <Button
                           size="sm"
-                          variant="ghost"
+                          variant="outline"
                           onClick={() => {
                             if (confirm(`Delete ${student.name}?`)) {
                               deleteMutation.mutate(student.id);
                             }
                           }}
-                          className="h-8 w-8 p-0 text-destructive btn-animated"
+                          className="flex-1 sm:flex-none text-destructive btn-animated"
                         >
-                          <Trash2 className="h-3.5 w-3.5" />
+                          <Trash2 className="h-3.5 w-3.5 sm:mr-2" />
+                          <span className="hidden sm:inline">Delete</span>
                         </Button>
                       </div>
                     </div>

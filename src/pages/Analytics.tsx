@@ -157,7 +157,7 @@ export default function AnalyticsPage() {
       </div>
 
       {/* Controls */}
-      <div className="flex flex-col gap-3">
+      <div className="flex flex-col gap-4">
         <div className="flex gap-2">
           <Button
             variant={viewMode === "total" ? "default" : "outline"}
@@ -175,47 +175,47 @@ export default function AnalyticsPage() {
           </Button>
         </div>
 
-        {viewMode === "total" && (
-          <Popover>
-            <PopoverTrigger asChild>
-              <Button variant="outline" className="btn-animated">
-                <CalendarIcon className="mr-2 h-4 w-4" />
-                {format(selectedMonth, "MMMM yyyy")}
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent className="w-auto p-0" align="start">
-              <Calendar
-                mode="single"
-                selected={selectedMonth}
-                onSelect={(date) => date && setSelectedMonth(date)}
-                initialFocus
-                className="pointer-events-auto"
-              />
-            </PopoverContent>
-          </Popover>
-        )}
+        <div className="flex flex-col sm:flex-row gap-2">
+          {viewMode === "total" && (
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button variant="outline" className="btn-animated w-full sm:w-auto">
+                  <CalendarIcon className="mr-2 h-4 w-4" />
+                  <span className="truncate">{format(selectedMonth, "MMMM yyyy")}</span>
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0" align="start">
+                <Calendar
+                  mode="single"
+                  selected={selectedMonth}
+                  onSelect={(date) => date && setSelectedMonth(date)}
+                  initialFocus
+                  className="pointer-events-auto"
+                />
+              </PopoverContent>
+            </Popover>
+          )}
 
-        {viewMode === "datewise" && (
-          <Popover>
-            <PopoverTrigger asChild>
-              <Button variant="outline" className="btn-animated">
-                <CalendarIcon className="mr-2 h-4 w-4" />
-                {format(selectedDate, "PPP")}
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent className="w-auto p-0" align="start">
-              <Calendar
-                mode="single"
-                selected={selectedDate}
-                onSelect={(date) => date && setSelectedDate(date)}
-                initialFocus
-                className="pointer-events-auto"
-              />
-            </PopoverContent>
-          </Popover>
-        )}
+          {viewMode === "datewise" && (
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button variant="outline" className="btn-animated w-full sm:w-auto">
+                  <CalendarIcon className="mr-2 h-4 w-4" />
+                  <span className="truncate">{format(selectedDate, "PPP")}</span>
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0" align="start">
+                <Calendar
+                  mode="single"
+                  selected={selectedDate}
+                  onSelect={(date) => date && setSelectedDate(date)}
+                  initialFocus
+                  className="pointer-events-auto"
+                />
+              </PopoverContent>
+            </Popover>
+          )}
 
-        <div className="flex gap-2">
           <div className="relative flex-1">
             <Input
               placeholder="Search students..."
@@ -234,8 +234,9 @@ export default function AnalyticsPage() {
               </Button>
             )}
           </div>
+
           <Select value={sortBy} onValueChange={(value: "name" | "roll") => setSortBy(value)}>
-            <SelectTrigger className="w-[140px] btn-animated">
+            <SelectTrigger className="w-full sm:w-[150px] btn-animated">
               <ArrowUpDown className="mr-2 h-4 w-4" />
               <SelectValue />
             </SelectTrigger>
@@ -258,30 +259,32 @@ export default function AnalyticsPage() {
           >
             <Card className="glass-card hover:shadow-md transition-all rounded-[1.5rem]">
               <CardHeader className="pb-3">
-                <CardTitle className="text-base flex items-center justify-between">
-                  <div>
-                    <span>{student.name}</span>
-                    <span className="text-xs font-normal text-muted-foreground ml-2">
-                      ({student.university_roll})
+                <CardTitle className="text-sm md:text-base">
+                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+                    <div className="flex-1 min-w-0">
+                      <div className="font-semibold truncate">{student.name}</div>
+                      <div className="text-xs font-normal text-muted-foreground truncate">
+                        Roll: {student.university_roll}
+                      </div>
+                    </div>
+                    <span
+                      className={cn(
+                        "text-xl sm:text-2xl font-bold flex-shrink-0",
+                        parseFloat(student.percentage) >= 75
+                          ? "text-success"
+                          : parseFloat(student.percentage) >= 50
+                          ? "text-accent"
+                          : "text-destructive"
+                      )}
+                    >
+                      {student.percentage}%
                     </span>
                   </div>
-                  <span
-                    className={cn(
-                      "text-xl font-bold",
-                      parseFloat(student.percentage) >= 75
-                        ? "text-success"
-                        : parseFloat(student.percentage) >= 50
-                        ? "text-accent"
-                        : "text-destructive"
-                    )}
-                  >
-                    {student.percentage}%
-                  </span>
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="flex items-center justify-between text-xs mb-3">
-                  <div className="flex gap-4">
+                <div className="flex items-center justify-between text-xs mb-3 flex-wrap gap-2">
+                  <div className="flex gap-3 sm:gap-4">
                     <div>
                       <span className="text-muted-foreground">Present: </span>
                       <span className="font-semibold text-success">{student.present}</span>
@@ -323,21 +326,21 @@ export default function AnalyticsPage() {
           >
             <Card className="glass-card rounded-[1.5rem]">
               <CardContent className="pt-4 pb-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h3 className="font-semibold">{student.name}</h3>
-                    <p className="text-xs text-muted-foreground">
+                <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
+                  <div className="flex-1 min-w-0">
+                    <h3 className="font-semibold text-sm md:text-base truncate">{student.name}</h3>
+                    <p className="text-xs text-muted-foreground truncate">
                       Roll: {student.university_roll}
                     </p>
                     {student.absence_reason && (
-                      <p className="text-xs text-muted-foreground mt-1">
+                      <p className="text-xs text-muted-foreground mt-1 break-words">
                         Reason: {student.absence_reason}
                       </p>
                     )}
                   </div>
                   <span
                     className={cn(
-                      "text-sm font-semibold px-3 py-1 rounded-full",
+                      "text-xs sm:text-sm font-semibold px-3 py-1 rounded-full flex-shrink-0 self-start",
                       student.status === "present"
                         ? "bg-success/10 text-success"
                         : "bg-destructive/10 text-destructive"

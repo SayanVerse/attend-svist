@@ -229,41 +229,31 @@ export default function AttendancePage() {
       animate={{ opacity: 1 }} 
       className="space-y-4 pb-20"
     >
-      <div className="flex flex-col gap-3">
-        <div className="flex items-center justify-between">
+      <div className="flex flex-col gap-4">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
           <div>
             <h2 className="text-2xl md:text-3xl font-bold tracking-tight">Daily Attendance</h2>
             <p className="text-sm text-muted-foreground">
               {format(selectedDate, "EEEE, MMMM d, yyyy")}
             </p>
           </div>
-          {holiday && (
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => unmarkHolidayMutation.mutate()}
-              className="btn-animated"
-            >
-              Unmark Holiday
-            </Button>
-          )}
         </div>
 
-        {/* Date Navigation */}
-        <div className="flex flex-wrap gap-2">
+        {/* Desktop Controls */}
+        <div className="hidden md:flex items-center gap-3 flex-wrap">
           <div className="flex items-center gap-2">
             <Button
               variant="outline"
               size="icon"
               onClick={goToPreviousDay}
-              className="btn-animated h-9 w-9"
+              className="btn-animated"
             >
               <ChevronLeft className="h-4 w-4" />
             </Button>
             
             <Popover>
               <PopoverTrigger asChild>
-                <Button variant="outline" className="btn-animated">
+                <Button variant="outline" className="btn-animated min-w-[180px]">
                   <CalendarIcon className="mr-2 h-4 w-4" />
                   {format(selectedDate, "PPP")}
                 </Button>
@@ -283,14 +273,14 @@ export default function AttendancePage() {
               variant="outline"
               size="icon"
               onClick={goToNextDay}
-              className="btn-animated h-9 w-9"
+              className="btn-animated"
             >
               <ChevronRight className="h-4 w-4" />
             </Button>
           </div>
 
           <Select value={sortBy} onValueChange={(value: "name" | "roll") => setSortBy(value)}>
-            <SelectTrigger className="w-[140px] btn-animated">
+            <SelectTrigger className="w-[150px] btn-animated">
               <ArrowUpDown className="mr-2 h-4 w-4" />
               <SelectValue />
             </SelectTrigger>
@@ -303,7 +293,6 @@ export default function AttendancePage() {
           {!holiday && (
             <Button
               variant="outline"
-              size="sm"
               onClick={() => {
                 const note = prompt("Add a note (optional):");
                 markHolidayMutation.mutate(note || undefined);
@@ -317,7 +306,6 @@ export default function AttendancePage() {
           {todayAttendance && todayAttendance.length > 0 && !holiday && (
             <Button
               variant="destructive"
-              size="sm"
               onClick={() => {
                 if (confirm("Clear all attendance for this date?")) {
                   clearAllAttendanceMutation.mutate();
@@ -333,9 +321,104 @@ export default function AttendancePage() {
           {deletedAttendance && (
             <Button
               variant="outline"
-              size="sm"
               onClick={() => undoDeleteMutation.mutate()}
               className="btn-animated"
+            >
+              <Undo2 className="h-4 w-4 mr-2" />
+              Undo
+            </Button>
+          )}
+        </div>
+
+        {/* Mobile Controls */}
+        <div className="flex md:hidden flex-col gap-2">
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="icon"
+              onClick={goToPreviousDay}
+              className="btn-animated flex-shrink-0"
+            >
+              <ChevronLeft className="h-4 w-4" />
+            </Button>
+            
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button variant="outline" className="btn-animated flex-1">
+                  <CalendarIcon className="mr-2 h-4 w-4" />
+                  <span className="truncate">{format(selectedDate, "PP")}</span>
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0" align="center">
+                <Calendar
+                  mode="single"
+                  selected={selectedDate}
+                  onSelect={(date) => date && setSelectedDate(date)}
+                  initialFocus
+                  className="pointer-events-auto"
+                />
+              </PopoverContent>
+            </Popover>
+
+            <Button
+              variant="outline"
+              size="icon"
+              onClick={goToNextDay}
+              className="btn-animated flex-shrink-0"
+            >
+              <ChevronRight className="h-4 w-4" />
+            </Button>
+          </div>
+
+          <div className="flex gap-2">
+            <Select value={sortBy} onValueChange={(value: "name" | "roll") => setSortBy(value)}>
+              <SelectTrigger className="flex-1 btn-animated">
+                <ArrowUpDown className="mr-2 h-4 w-4" />
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="name">Sort by Name</SelectItem>
+                <SelectItem value="roll">Sort by Roll</SelectItem>
+              </SelectContent>
+            </Select>
+
+            {!holiday && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  const note = prompt("Add a note (optional):");
+                  markHolidayMutation.mutate(note || undefined);
+                }}
+                className="btn-animated flex-shrink-0"
+              >
+                Mark Holiday
+              </Button>
+            )}
+          </div>
+
+          {todayAttendance && todayAttendance.length > 0 && !holiday && (
+            <Button
+              variant="destructive"
+              size="sm"
+              onClick={() => {
+                if (confirm("Clear all attendance for this date?")) {
+                  clearAllAttendanceMutation.mutate();
+                }
+              }}
+              className="btn-animated w-full"
+            >
+              <Trash2 className="h-4 w-4 mr-2" />
+              Clear All
+            </Button>
+          )}
+
+          {deletedAttendance && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => undoDeleteMutation.mutate()}
+              className="btn-animated w-full"
             >
               <Undo2 className="h-4 w-4 mr-2" />
               Undo
@@ -413,41 +496,15 @@ export default function AttendancePage() {
                 >
                   <Card className="glass-card hover:shadow-md transition-all rounded-[1.5rem]">
                     <CardContent className="pt-4 pb-4">
-                      <div className="flex items-start justify-between gap-3">
-                        <div className="flex-1 min-w-0">
-                          <h3 className="font-semibold truncate">{student.name}</h3>
-                          <p className="text-xs text-muted-foreground truncate">
-                            Roll: {student.university_roll}
-                          </p>
-                        </div>
+                      <div className="flex flex-col gap-3">
+                        <div className="flex items-start justify-between gap-3">
+                          <div className="flex-1 min-w-0">
+                            <h3 className="font-semibold text-sm md:text-base truncate">{student.name}</h3>
+                            <p className="text-xs text-muted-foreground truncate">
+                              Roll: {student.university_roll}
+                            </p>
+                          </div>
 
-                        <div className="flex items-center gap-1.5 flex-shrink-0">
-                          <Button
-                            size="sm"
-                            variant={isPresent ? "default" : "outline"}
-                            onClick={() => handleStatusChange(student.id, 'present')}
-                            disabled={!!holiday}
-                            className={cn(
-                              "btn-animated h-8 px-2 text-xs",
-                              isPresent && "bg-success hover:bg-success/90"
-                            )}
-                          >
-                            <CheckCircle className="h-3 w-3 mr-1" />
-                            Present
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant={isAbsent ? "default" : "outline"}
-                            onClick={() => handleStatusChange(student.id, 'absent')}
-                            disabled={!!holiday}
-                            className={cn(
-                              "btn-animated h-8 px-2 text-xs",
-                              isAbsent && "bg-destructive hover:bg-destructive/90"
-                            )}
-                          >
-                            <XCircle className="h-3 w-3 mr-1" />
-                            Absent
-                          </Button>
                           {status && !holiday && (
                             <Button
                               size="sm"
@@ -460,23 +517,52 @@ export default function AttendancePage() {
                                   return newData;
                                 });
                               }}
-                              className="h-8 w-8 p-0"
+                              className="h-8 w-8 p-0 flex-shrink-0"
                             >
                               <X className="h-3 w-3" />
                             </Button>
                           )}
                         </div>
-                      </div>
 
-                      {isAbsent && !holiday && (
-                        <Textarea
-                          placeholder="Reason for absence..."
-                          value={attendanceData[student.id]?.reason || ""}
-                          onChange={(e) => handleReasonChange(student.id, e.target.value)}
-                          onBlur={() => saveAttendanceMutation.mutate(student.id)}
-                          className="mt-3 min-h-[60px] text-sm"
-                        />
-                      )}
+                        <div className="flex gap-2 w-full">
+                          <Button
+                            size="sm"
+                            variant={isPresent ? "default" : "outline"}
+                            onClick={() => handleStatusChange(student.id, 'present')}
+                            disabled={!!holiday}
+                            className={cn(
+                              "btn-animated flex-1 text-xs md:text-sm",
+                              isPresent && "bg-success hover:bg-success/90"
+                            )}
+                          >
+                            <CheckCircle className="h-3 w-3 md:h-4 md:w-4 mr-1" />
+                            <span className="truncate">Present</span>
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant={isAbsent ? "default" : "outline"}
+                            onClick={() => handleStatusChange(student.id, 'absent')}
+                            disabled={!!holiday}
+                            className={cn(
+                              "btn-animated flex-1 text-xs md:text-sm",
+                              isAbsent && "bg-destructive hover:bg-destructive/90"
+                            )}
+                          >
+                            <XCircle className="h-3 w-3 md:h-4 md:w-4 mr-1" />
+                            <span className="truncate">Absent</span>
+                          </Button>
+                        </div>
+
+                        {isAbsent && !holiday && (
+                          <Textarea
+                            placeholder="Reason for absence..."
+                            value={attendanceData[student.id]?.reason || ""}
+                            onChange={(e) => handleReasonChange(student.id, e.target.value)}
+                            onBlur={() => saveAttendanceMutation.mutate(student.id)}
+                            className="min-h-[60px] text-sm w-full"
+                          />
+                        )}
+                      </div>
                     </CardContent>
                   </Card>
                 </motion.div>
