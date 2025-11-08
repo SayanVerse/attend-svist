@@ -25,8 +25,8 @@ export default function AnalyticsPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [sortBy, setSortBy] = useState<"name" | "roll">("name");
 
-  const monthStart = format(startOfMonth(selectedMonth), "yyyy-MM-dd");
-  const monthEnd = format(endOfMonth(selectedMonth), "yyyy-MM-dd");
+  const monthStartStr = format(startOfMonth(selectedMonth), "yyyy-MM-dd");
+  const monthEndStr = format(endOfMonth(selectedMonth), "yyyy-MM-dd");
   const currentDate = format(selectedDate, "yyyy-MM-dd");
 
   const { data: students } = useQuery({
@@ -42,42 +42,55 @@ export default function AnalyticsPage() {
   });
 
   const { data: totalSummary } = useQuery({
-    queryKey: ["analytics-total", monthStart, monthEnd],
+    queryKey: ["analytics-total", monthStartStr, monthEndStr],
     queryFn: async () => {
       const { data: attendance } = await supabase
         .from("attendance")
         .select("student_id, status, date")
-        .gte("date", monthStart)
-        .lte("date", monthEnd);
+        .gte("date", monthStartStr)
+        .lte("date", monthEndStr);
 
       const { data: holidays } = await supabase
         .from("holidays")
         .select("date")
-        .gte("date", monthStart)
-        .lte("date", monthEnd);
+        .gte("date", monthStartStr)
+        .lte("date", monthEndStr);
 
-      const daysInMonth = getDaysInMonth(selectedMonth);
       const today = new Date();
       today.setHours(0, 0, 0, 0); // Reset time for accurate comparison
       
       // Only count holidays that have already occurred (up to today)
       const holidaysUpToToday = holidays?.filter(h => new Date(h.date) <= today) || [];
-      const holidayCount = holidaysUpToToday.length;
+      const holidayDates = new Set(holidaysUpToToday.map(h => h.date));
       
-      // Calculate working days only up to today (not future dates)
-      let totalDaysToConsider: number;
+      // Calculate working days: count only weekdays (Mon-Fri) up to today, excluding holidays
+      let workingDays = 0;
+      const monthStart = startOfMonth(selectedMonth);
+      const monthEnd = endOfMonth(selectedMonth);
+      
+      // Determine the last date to consider
+      let lastDateToConsider: Date;
       if (selectedMonth.getMonth() === today.getMonth() && selectedMonth.getFullYear() === today.getFullYear()) {
-        // Current month: only count days up to today
-        totalDaysToConsider = today.getDate();
+        // Current month: only count up to today
+        lastDateToConsider = today;
       } else if (selectedMonth > today) {
         // Future month: no working days yet
-        totalDaysToConsider = 0;
+        lastDateToConsider = new Date(monthStart.getTime() - 1); // No days to count
       } else {
-        // Past month: count all days
-        totalDaysToConsider = daysInMonth;
+        // Past month: count all days in the month
+        lastDateToConsider = monthEnd;
       }
       
-      const workingDays = Math.max(0, totalDaysToConsider - holidayCount);
+      // Count weekdays (Mon-Fri) excluding holidays
+      for (let d = new Date(monthStart); d <= lastDateToConsider; d.setDate(d.getDate() + 1)) {
+        const dayOfWeek = d.getDay();
+        const dateStr = format(d, "yyyy-MM-dd");
+        
+        // Skip weekends (0 = Sunday, 6 = Saturday) and holidays
+        if (dayOfWeek !== 0 && dayOfWeek !== 6 && !holidayDates.has(dateStr)) {
+          workingDays++;
+        }
+      }
 
       const studentStats = students?.map((student) => {
         const studentAttendance = attendance?.filter(
