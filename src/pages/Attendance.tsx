@@ -478,6 +478,10 @@ export default function AttendancePage() {
       {/* Student List */}
       {isLoading ? (
         <div className="text-center py-12">Loading students...</div>
+      ) : holiday ? (
+        <div className="text-center py-8 text-muted-foreground">
+          <p>No attendance marking on holidays</p>
+        </div>
       ) : (
         <AnimatePresence mode="popLayout">
           <div className="grid gap-3">

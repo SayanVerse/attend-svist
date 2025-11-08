@@ -83,9 +83,17 @@ export default function AnalyticsPage() {
         const studentAttendance = attendance?.filter(
           (a) => a.student_id === student.id && new Date(a.date) <= today
         );
+        
         const present = studentAttendance?.filter((a) => a.status === "present").length || 0;
-        const totalMarked = studentAttendance?.length || 0;
-        const absent = Math.max(0, workingDays - present);
+        const explicitlyAbsent = studentAttendance?.filter((a) => a.status === "absent").length || 0;
+        
+        // Calculate unfilled days: working days where no attendance was marked
+        const markedDays = studentAttendance?.length || 0;
+        const unfilledDays = Math.max(0, workingDays - markedDays);
+        
+        // Total absent = explicitly marked absent + unfilled attendance days
+        const absent = explicitlyAbsent + unfilledDays;
+        
         const percentage = workingDays > 0 ? Math.min(100, ((present / workingDays) * 100)).toFixed(1) : "0.0";
 
         return {
