@@ -34,31 +34,33 @@ export function AppSidebar() {
   const { open } = useSidebar();
 
   return (
-    <Sidebar className="border-r border-border/40 backdrop-blur-xl bg-white/70 dark:bg-card/70">
-      <SidebarContent>
+    <Sidebar collapsible="icon" className="border-r">
+      <SidebarContent className="pt-4">
         <SidebarGroup>
-          <SidebarGroupLabel className="text-lg font-bold px-4 py-6 bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">
-            Navigation
-          </SidebarGroupLabel>
           <SidebarGroupContent>
-            <SidebarMenu className="space-y-2 px-2">
+            <SidebarMenu className="space-y-1">
               {menuItems.map((item) => {
                 const Icon = item.icon;
                 const isActive = location.pathname === item.path;
                 return (
                   <SidebarMenuItem key={item.title}>
-                    <SidebarMenuButton asChild>
-                      <Link
-                        to={item.path}
-                        className={cn(
-                          "flex items-center gap-3 rounded-full px-4 py-3 transition-all hover:scale-105 active:scale-95",
-                          isActive
-                            ? "bg-primary text-primary-foreground shadow-lg font-semibold"
-                            : "hover:bg-accent/50 hover:text-accent-foreground"
-                        )}
-                      >
-                        <Icon className="h-5 w-5 flex-shrink-0" />
-                        {open && <span className="font-medium">{item.title}</span>}
+                    <SidebarMenuButton 
+                      asChild
+                      isActive={isActive}
+                      tooltip={item.title}
+                      className={cn(
+                        "h-12 transition-all",
+                        isActive && "bg-primary/10 text-primary font-semibold border-l-4 border-primary"
+                      )}
+                    >
+                      <Link to={item.path} className="flex items-center gap-3 px-3">
+                        <Icon className={cn("h-5 w-5", isActive && "text-primary")} />
+                        <span className={cn(
+                          "transition-opacity duration-200",
+                          !open && "opacity-0 w-0"
+                        )}>
+                          {item.title}
+                        </span>
                       </Link>
                     </SidebarMenuButton>
                   </SidebarMenuItem>

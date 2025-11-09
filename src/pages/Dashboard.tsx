@@ -3,11 +3,27 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Users, Calendar, CheckCircle, XCircle, Bell, BellOff } from "lucide-react";
-import { format, startOfMonth, endOfMonth } from "date-fns";
+import { Users, Calendar, CheckCircle, XCircle, Bell, BellOff, TrendingUp } from "lucide-react";
+import { format, startOfMonth, endOfMonth, eachDayOfInterval, isWeekend } from "date-fns";
 import { motion } from "framer-motion";
 import { useNotifications } from "@/hooks/useNotifications";
 import { cn } from "@/lib/utils";
+import { 
+  ChartContainer, 
+  ChartTooltip, 
+  ChartTooltipContent 
+} from "@/components/ui/chart";
+import { 
+  LineChart, 
+  Line, 
+  BarChart, 
+  Bar, 
+  XAxis, 
+  YAxis, 
+  CartesianGrid, 
+  ResponsiveContainer,
+  Legend
+} from "recharts";
 
 export default function Dashboard() {
   const today = format(new Date(), "yyyy-MM-dd");
@@ -57,21 +73,51 @@ export default function Dashboard() {
         .gte("date", monthStart)
         .lte("date", monthEnd);
 
-      const uniqueDates = new Set(data?.map(a => a.date) || []);
-      const presentDays = data?.filter(a => a.status === "present").length || 0;
-      const absentDays = data?.filter(a => a.status === "absent").length || 0;
-
       const { data: holidays } = await supabase
         .from("holidays")
         .select("date")
         .gte("date", monthStart)
         .lte("date", monthEnd);
 
+      const holidayDates = new Set(holidays?.map(h => h.date) || []);
+      
+      const allDays = eachDayOfInterval({
+        start: new Date(monthStart),
+        end: new Date(monthEnd)
+      });
+
+      const workingDays = allDays.filter(day => {
+        const dateStr = format(day, "yyyy-MM-dd");
+        return !isWeekend(day) && !holidayDates.has(dateStr) && new Date(dateStr) <= new Date();
+      });
+
+      const attendanceByDate = data?.reduce((acc, curr) => {
+        if (!acc[curr.date]) acc[curr.date] = { present: 0, absent: 0 };
+        if (curr.status === "present") acc[curr.date].present++;
+        if (curr.status === "absent") acc[curr.date].absent++;
+        return acc;
+      }, {} as Record<string, { present: number; absent: number }>) || {};
+
+      const chartData = workingDays.map(day => {
+        const dateStr = format(day, "yyyy-MM-dd");
+        const stats = attendanceByDate[dateStr] || { present: 0, absent: 0 };
+        return {
+          date: format(day, "MMM dd"),
+          present: stats.present,
+          absent: stats.absent,
+        };
+      });
+
+      const uniqueDates = new Set(data?.map(a => a.date) || []);
+      const presentDays = data?.filter(a => a.status === "present").length || 0;
+      const absentDays = data?.filter(a => a.status === "absent").length || 0;
+
       return {
-        totalDays: uniqueDates.size,
+        totalDays: workingDays.length,
         presentDays,
         absentDays,
         holidays: holidays?.length || 0,
+        chartData,
       };
     },
   });
@@ -166,37 +212,109 @@ export default function Dashboard() {
         })}
       </div>
 
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.4 }}
-      >
-        <Card className="glass-card">
-          <CardHeader>
-            <CardTitle>Monthly Summary</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <span className="text-sm font-medium">Total Teaching Days</span>
-                <span className="text-2xl font-bold">{monthlyStats?.totalDays || 0}</span>
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="text-sm font-medium text-success">Present Records</span>
-                <span className="text-2xl font-bold text-success">{monthlyStats?.presentDays || 0}</span>
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="text-sm font-medium text-destructive">Absent Records</span>
-                <span className="text-2xl font-bold text-destructive">{monthlyStats?.absentDays || 0}</span>
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="text-sm font-medium text-accent">Holidays</span>
-                <span className="text-2xl font-bold text-accent">{monthlyStats?.holidays || 0}</span>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      </motion.div>
+      <div className="grid gap-4 md:grid-cols-2">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.4 }}
+        >
+          <Card className="glass-card">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <TrendingUp className="h-5 w-5" />
+                Attendance Trends
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <ChartContainer
+                config={{
+                  present: {
+                    label: "Present",
+                    color: "hsl(var(--success))",
+                  },
+                  absent: {
+                    label: "Absent",
+                    color: "hsl(var(--destructive))",
+                  },
+                }}
+                className="h-[300px]"
+              >
+                <ResponsiveContainer width="100%" height="100%">
+                  <LineChart data={monthlyStats?.chartData || []}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                    <XAxis 
+                      dataKey="date" 
+                      stroke="hsl(var(--muted-foreground))"
+                      fontSize={12}
+                    />
+                    <YAxis stroke="hsl(var(--muted-foreground))" fontSize={12} />
+                    <ChartTooltip content={<ChartTooltipContent />} />
+                    <Legend />
+                    <Line 
+                      type="monotone" 
+                      dataKey="present" 
+                      stroke="hsl(var(--success))" 
+                      strokeWidth={2}
+                      dot={{ fill: "hsl(var(--success))" }}
+                    />
+                    <Line 
+                      type="monotone" 
+                      dataKey="absent" 
+                      stroke="hsl(var(--destructive))" 
+                      strokeWidth={2}
+                      dot={{ fill: "hsl(var(--destructive))" }}
+                    />
+                  </LineChart>
+                </ResponsiveContainer>
+              </ChartContainer>
+            </CardContent>
+          </Card>
+        </motion.div>
+
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.5 }}
+        >
+          <Card className="glass-card">
+            <CardHeader>
+              <CardTitle>Monthly Summary</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <ChartContainer
+                config={{
+                  value: {
+                    label: "Days",
+                    color: "hsl(var(--primary))",
+                  },
+                }}
+                className="h-[300px]"
+              >
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart
+                    data={[
+                      { name: "Working Days", value: monthlyStats?.totalDays || 0, fill: "hsl(var(--primary))" },
+                      { name: "Present", value: monthlyStats?.presentDays || 0, fill: "hsl(var(--success))" },
+                      { name: "Absent", value: monthlyStats?.absentDays || 0, fill: "hsl(var(--destructive))" },
+                      { name: "Holidays", value: monthlyStats?.holidays || 0, fill: "hsl(var(--accent))" },
+                    ]}
+                  >
+                    <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                    <XAxis 
+                      dataKey="name" 
+                      stroke="hsl(var(--muted-foreground))"
+                      fontSize={12}
+                    />
+                    <YAxis stroke="hsl(var(--muted-foreground))" fontSize={12} />
+                    <ChartTooltip content={<ChartTooltipContent />} />
+                    <Bar dataKey="value" radius={[8, 8, 0, 0]} />
+                  </BarChart>
+                </ResponsiveContainer>
+              </ChartContainer>
+            </CardContent>
+          </Card>
+        </motion.div>
+      </div>
     </div>
   );
 }

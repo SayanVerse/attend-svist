@@ -220,8 +220,13 @@ export default function AttendancePage() {
     return existing || attendanceData[studentId];
   };
 
-  const goToPreviousDay = () => setSelectedDate(subDays(selectedDate, 1));
-  const goToNextDay = () => setSelectedDate(addDays(selectedDate, 1));
+  const goToPreviousDay = () => {
+    setSelectedDate(prev => subDays(prev, 1));
+  };
+
+  const goToNextDay = () => {
+    setSelectedDate(prev => addDays(prev, 1));
+  };
 
   return (
     <motion.div 
@@ -280,7 +285,7 @@ export default function AttendancePage() {
           </div>
 
           <Select value={sortBy} onValueChange={(value: "name" | "roll") => setSortBy(value)}>
-            <SelectTrigger className="w-[150px] btn-animated">
+            <SelectTrigger className="w-[150px] btn-animated rounded-lg">
               <ArrowUpDown className="mr-2 h-4 w-4" />
               <SelectValue />
             </SelectTrigger>
