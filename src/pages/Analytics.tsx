@@ -13,6 +13,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { format, startOfMonth, endOfMonth, getDaysInMonth } from "date-fns";
 import { BarChart3, CalendarIcon, X, ArrowUpDown, RefreshCw } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
@@ -26,6 +32,7 @@ export default function AnalyticsPage() {
   const [selectedMonth, setSelectedMonth] = useState<Date>(new Date());
   const [searchQuery, setSearchQuery] = useState("");
   const [sortBy, setSortBy] = useState<"name" | "roll">("name");
+  const [selectedStudentId, setSelectedStudentId] = useState<string | null>(null);
   const queryClient = useQueryClient();
 
   const monthStartStr = format(startOfMonth(selectedMonth), "yyyy-MM-dd");
@@ -146,6 +153,35 @@ export default function AnalyticsPage() {
     },
     enabled: viewMode === "datewise",
   });
+
+  const { data: studentDetailedAttendance } = useQuery({
+    queryKey: ["student-detailed-attendance", selectedStudentId, monthStartStr, monthEndStr],
+    queryFn: async () => {
+      if (!selectedStudentId) return [];
+      
+      const { data: attendance } = await supabase
+        .from("attendance")
+        .select("date, status, absence_reason, created_at")
+        .eq("student_id", selectedStudentId)
+        .gte("date", monthStartStr)
+        .lte("date", monthEndStr)
+        .order("date", { ascending: false });
+
+      // Group by date to handle duplicates (keep latest)
+      const attendanceByDate = new Map();
+      attendance?.forEach(record => {
+        const existing = attendanceByDate.get(record.date);
+        if (!existing || new Date(record.created_at) > new Date(existing.created_at)) {
+          attendanceByDate.set(record.date, record);
+        }
+      });
+
+      return Array.from(attendanceByDate.values());
+    },
+    enabled: !!selectedStudentId,
+  });
+
+  const selectedStudent = students?.find(s => s.id === selectedStudentId);
 
   const sortData = (data: any[]) => {
     return data.slice().sort((a, b) => {
@@ -303,7 +339,10 @@ export default function AnalyticsPage() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: index * 0.02 }}
           >
-            <Card className="glass-card hover:shadow-md transition-all rounded-[1.5rem]">
+            <Card 
+              className="glass-card hover:shadow-md transition-all rounded-[1.5rem] cursor-pointer"
+              onClick={() => setSelectedStudentId(student.id)}
+            >
               <CardHeader className="pb-3">
                 <CardTitle className="text-sm md:text-base">
                   <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
@@ -411,6 +450,68 @@ export default function AnalyticsPage() {
           </Card>
         )}
       </div>
+
+      {/* Student Detail Dialog */}
+      <Dialog open={!!selectedStudentId} onOpenChange={(open) => !open && setSelectedStudentId(null)}>
+        <DialogContent className="max-w-md max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="text-lg">
+              {selectedStudent?.name}
+              <div className="text-sm font-normal text-muted-foreground mt-1">
+                Roll: {selectedStudent?.university_roll}
+              </div>
+            </DialogTitle>
+          </DialogHeader>
+          
+          <div className="space-y-2 mt-4">
+            {studentDetailedAttendance && studentDetailedAttendance.length > 0 ? (
+              studentDetailedAttendance.map((record) => {
+                const date = new Date(record.date);
+                const dayName = format(date, "EEEE");
+                const formattedDate = format(date, "dd MMM yyyy");
+                
+                return (
+                  <div
+                    key={record.date}
+                    className={cn(
+                      "p-3 rounded-lg border",
+                      record.status === "present" 
+                        ? "bg-success/5 border-success/20" 
+                        : "bg-destructive/5 border-destructive/20"
+                    )}
+                  >
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="flex-1 min-w-0">
+                        <div className="font-medium text-sm">{dayName}</div>
+                        <div className="text-xs text-muted-foreground">{formattedDate}</div>
+                        {record.absence_reason && (
+                          <div className="text-xs text-muted-foreground mt-1 italic">
+                            Reason: {record.absence_reason}
+                          </div>
+                        )}
+                      </div>
+                      <span
+                        className={cn(
+                          "text-xs font-semibold px-2 py-1 rounded-full flex-shrink-0",
+                          record.status === "present"
+                            ? "bg-success text-white"
+                            : "bg-destructive text-white"
+                        )}
+                      >
+                        {record.status === "present" ? "Present" : "Absent"}
+                      </span>
+                    </div>
+                  </div>
+                );
+              })
+            ) : (
+              <div className="text-center py-8 text-muted-foreground text-sm">
+                No attendance records found for this month
+              </div>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
     </motion.div>
   );
 }
