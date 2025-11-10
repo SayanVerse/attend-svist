@@ -5,7 +5,8 @@ import {
   Calendar, 
   BarChart3, 
   FileDown, 
-  ClipboardList 
+  ClipboardList,
+  CalendarDays
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
@@ -22,7 +23,8 @@ import {
 
 const menuItems = [
   { title: "Dashboard", icon: LayoutDashboard, path: "/" },
-  { title: "Daily Attendance", icon: ClipboardList, path: "/attendance" },
+  { title: "Today's Attendance", icon: ClipboardList, path: "/attendance" },
+  { title: "Date-wise Attendance", icon: CalendarDays, path: "/datewise-attendance" },
   { title: "Students", icon: Users, path: "/students" },
   { title: "Holidays", icon: Calendar, path: "/holidays" },
   { title: "Analytics", icon: BarChart3, path: "/analytics" },

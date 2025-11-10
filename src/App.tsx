@@ -8,6 +8,7 @@ import { DashboardLayout } from "@/components/DashboardLayout";
 import { useAuth } from "@/hooks/useAuth";
 import Dashboard from "./pages/Dashboard";
 import Attendance from "./pages/Attendance";
+import DatewiseAttendance from "./pages/DatewiseAttendance";
 import Students from "./pages/Students";
 import Holidays from "./pages/Holidays";
 import Analytics from "./pages/Analytics";
@@ -49,6 +50,7 @@ const App = () => (
                     <Routes>
                       <Route path="/" element={<Dashboard />} />
                       <Route path="/attendance" element={<Attendance />} />
+                      <Route path="/datewise-attendance" element={<DatewiseAttendance />} />
                       <Route path="/students" element={<Students />} />
                       <Route path="/holidays" element={<Holidays />} />
                       <Route path="/analytics" element={<Analytics />} />
