@@ -31,10 +31,17 @@ export default function AttendancePage() {
   const queryClient = useQueryClient();
   const currentDate = format(selectedDate, "yyyy-MM-dd");
 
+  // Clear local attendance data when date changes
+  const handleDateChange = (newDate: Date) => {
+    setSelectedDate(newDate);
+    setAttendanceData({});
+    setDeletedAttendance(null);
+  };
+
   // Swipe gestures for date navigation
   useSwipeGesture({
-    onSwipeLeft: () => setSelectedDate(addDays(selectedDate, 1)),
-    onSwipeRight: () => setSelectedDate(subDays(selectedDate, 1)),
+    onSwipeLeft: () => handleDateChange(addDays(selectedDate, 1)),
+    onSwipeRight: () => handleDateChange(subDays(selectedDate, 1)),
   });
 
   const { data: students, isLoading } = useQuery({
@@ -221,11 +228,19 @@ export default function AttendancePage() {
   };
 
   const goToPreviousDay = () => {
-    setSelectedDate(prev => subDays(prev, 1));
+    handleDateChange(subDays(selectedDate, 1));
   };
 
   const goToNextDay = () => {
-    setSelectedDate(prev => addDays(prev, 1));
+    handleDateChange(addDays(selectedDate, 1));
+  };
+
+  const refreshAttendance = () => {
+    queryClient.invalidateQueries({ queryKey: ["attendance", currentDate] });
+    queryClient.invalidateQueries({ queryKey: ["holiday", currentDate] });
+    queryClient.invalidateQueries({ queryKey: ["students"] });
+    setAttendanceData({});
+    toast.success("Refreshed");
   };
 
   return (
@@ -246,6 +261,16 @@ export default function AttendancePage() {
 
         {/* Desktop Controls */}
         <div className="hidden md:flex items-center gap-3 flex-wrap">
+          <Button
+            variant="outline"
+            size="icon"
+            onClick={refreshAttendance}
+            className="btn-animated"
+            title="Refresh"
+          >
+            <Undo2 className="h-4 w-4" />
+          </Button>
+          
           <div className="flex items-center gap-2">
             <Button
               variant="outline"
@@ -267,7 +292,7 @@ export default function AttendancePage() {
                 <Calendar
                   mode="single"
                   selected={selectedDate}
-                  onSelect={(date) => date && setSelectedDate(date)}
+                  onSelect={(date) => date && handleDateChange(date)}
                   initialFocus
                   className="pointer-events-auto"
                 />
@@ -341,6 +366,16 @@ export default function AttendancePage() {
             <Button
               variant="outline"
               size="icon"
+              onClick={refreshAttendance}
+              className="btn-animated flex-shrink-0"
+              title="Refresh"
+            >
+              <Undo2 className="h-4 w-4" />
+            </Button>
+            
+            <Button
+              variant="outline"
+              size="icon"
               onClick={goToPreviousDay}
               className="btn-animated flex-shrink-0"
             >
@@ -358,7 +393,7 @@ export default function AttendancePage() {
                 <Calendar
                   mode="single"
                   selected={selectedDate}
-                  onSelect={(date) => date && setSelectedDate(date)}
+                  onSelect={(date) => date && handleDateChange(date)}
                   initialFocus
                   className="pointer-events-auto"
                 />

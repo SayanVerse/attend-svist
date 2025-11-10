@@ -14,7 +14,9 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { format, startOfMonth, endOfMonth, getDaysInMonth } from "date-fns";
-import { BarChart3, CalendarIcon, X, ArrowUpDown } from "lucide-react";
+import { BarChart3, CalendarIcon, X, ArrowUpDown, RefreshCw } from "lucide-react";
+import { useQueryClient } from "@tanstack/react-query";
+import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { motion } from "framer-motion";
 
@@ -24,6 +26,7 @@ export default function AnalyticsPage() {
   const [selectedMonth, setSelectedMonth] = useState<Date>(new Date());
   const [searchQuery, setSearchQuery] = useState("");
   const [sortBy, setSortBy] = useState<"name" | "roll">("name");
+  const queryClient = useQueryClient();
 
   const monthStartStr = format(startOfMonth(selectedMonth), "yyyy-MM-dd");
   const monthEndStr = format(endOfMonth(selectedMonth), "yyyy-MM-dd");
@@ -46,7 +49,7 @@ export default function AnalyticsPage() {
     queryFn: async () => {
       const { data: attendance } = await supabase
         .from("attendance")
-        .select("student_id, status, date")
+        .select("student_id, status, date, created_at")
         .gte("date", monthStartStr)
         .lte("date", monthEndStr);
 
@@ -93,12 +96,24 @@ export default function AnalyticsPage() {
       }
 
       const studentStats = students?.map((student) => {
+        // Filter attendance for this student within date range and up to today
         const studentAttendance = attendance?.filter(
           (a) => a.student_id === student.id && new Date(a.date) <= today
-        );
+        ) || [];
         
-        const present = studentAttendance?.filter((a) => a.status === "present").length || 0;
-        const absent = studentAttendance?.filter((a) => a.status === "absent").length || 0;
+        // Group by date to handle any duplicate entries (keep latest)
+        const attendanceByDate = new Map();
+        studentAttendance.forEach(record => {
+          const existing = attendanceByDate.get(record.date);
+          if (!existing || new Date(record.created_at) > new Date(existing.created_at)) {
+            attendanceByDate.set(record.date, record);
+          }
+        });
+        
+        // Count unique present and absent days
+        const uniqueAttendance = Array.from(attendanceByDate.values());
+        const present = uniqueAttendance.filter((a) => a.status === "present").length;
+        const absent = uniqueAttendance.filter((a) => a.status === "absent").length;
         
         const percentage = workingDays > 0 ? Math.min(100, ((present / workingDays) * 100)).toFixed(1) : "0.0";
 
@@ -157,6 +172,13 @@ export default function AnalyticsPage() {
         absence_reason: a.absence_reason
       })) || []));
 
+  const refreshAnalytics = () => {
+    queryClient.invalidateQueries({ queryKey: ["analytics-total"] });
+    queryClient.invalidateQueries({ queryKey: ["analytics-datewise"] });
+    queryClient.invalidateQueries({ queryKey: ["students"] });
+    toast.success("Analytics refreshed");
+  };
+
   return (
     <motion.div
       initial={{ opacity: 0 }}
@@ -173,6 +195,16 @@ export default function AnalyticsPage() {
       {/* Controls */}
       <div className="flex flex-col gap-4">
         <div className="flex gap-2">
+          <Button
+            variant="outline"
+            size="icon"
+            onClick={refreshAnalytics}
+            className="btn-animated flex-shrink-0"
+            title="Refresh Analytics"
+          >
+            <RefreshCw className="h-4 w-4" />
+          </Button>
+          
           <Button
             variant={viewMode === "total" ? "default" : "outline"}
             onClick={() => setViewMode("total")}
