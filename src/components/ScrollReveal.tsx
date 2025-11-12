@@ -17,14 +17,18 @@ export function ScrollReveal({
   className = "",
 }: ScrollRevealProps) {
   const ref = useRef(null);
-  const isInView = useInView(ref, { once: true, margin: "-100px" });
+  const isInView = useInView(ref, { once: true, margin: "-50px" });
   const controls = useAnimation();
 
+  // Reduce animation distance on mobile
+  const isMobile = typeof window !== 'undefined' && window.innerWidth < 768;
+  const animationDistance = isMobile ? 20 : 50;
+
   const directions = {
-    up: { y: 50, x: 0 },
-    down: { y: -50, x: 0 },
-    left: { x: 50, y: 0 },
-    right: { x: -50, y: 0 },
+    up: { y: animationDistance, x: 0 },
+    down: { y: -animationDistance, x: 0 },
+    left: { x: animationDistance, y: 0 },
+    right: { x: -animationDistance, y: 0 },
   };
 
   useEffect(() => {
@@ -48,8 +52,8 @@ export function ScrollReveal({
           x: 0,
           y: 0,
           transition: {
-            duration,
-            delay,
+            duration: isMobile ? duration * 0.7 : duration,
+            delay: isMobile ? delay * 0.5 : delay,
             ease: [0.4, 0, 0.2, 1],
           },
         },

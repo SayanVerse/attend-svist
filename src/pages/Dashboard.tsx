@@ -3,6 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
 import { Users, Calendar, CheckCircle, XCircle, Bell, BellOff, TrendingUp } from "lucide-react";
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, isWeekend } from "date-fns";
 import { motion } from "framer-motion";
@@ -40,7 +41,7 @@ export default function Dashboard() {
   const monthStart = format(startOfMonth(new Date()), "yyyy-MM-dd");
   const monthEnd = format(endOfMonth(new Date()), "yyyy-MM-dd");
 
-  const { data: studentsCount } = useQuery({
+  const { data: studentsCount, isLoading: isLoadingStudents } = useQuery({
     queryKey: ["students-count"],
     queryFn: async () => {
       const { count } = await supabase
@@ -50,7 +51,7 @@ export default function Dashboard() {
     },
   });
 
-  const { data: todayAttendance } = useQuery({
+  const { data: todayAttendance, isLoading: isLoadingToday } = useQuery({
     queryKey: ["today-attendance", today],
     queryFn: async () => {
       const { data } = await supabase
@@ -65,7 +66,7 @@ export default function Dashboard() {
     },
   });
 
-  const { data: monthlyStats } = useQuery({
+  const { data: monthlyStats, isLoading: isLoadingMonthly } = useQuery({
     queryKey: ["monthly-stats", monthStart, monthEnd],
     queryFn: async () => {
       const { data } = await supabase
@@ -129,24 +130,28 @@ export default function Dashboard() {
       value: studentsCount || 0,
       icon: Users,
       color: "text-primary",
+      isLoading: isLoadingStudents,
     },
     {
       title: "Present Today",
       value: todayAttendance?.present || 0,
       icon: CheckCircle,
       color: "text-success",
+      isLoading: isLoadingToday,
     },
     {
       title: "Absent Today",
       value: todayAttendance?.absent || 0,
       icon: XCircle,
       color: "text-destructive",
+      isLoading: isLoadingToday,
     },
     {
       title: "Holidays This Month",
       value: monthlyStats?.holidays || 0,
       icon: Calendar,
       color: "text-accent",
+      isLoading: isLoadingMonthly,
     },
   ];
 
@@ -206,7 +211,11 @@ export default function Dashboard() {
                   <Icon className={cn("h-4 w-4", stat.color)} />
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold">{stat.value}</div>
+                  {stat.isLoading ? (
+                    <Skeleton className="h-8 w-16" />
+                  ) : (
+                    <div className="text-2xl font-bold">{stat.value}</div>
+                  )}
                 </CardContent>
               </Card>
             </ScrollReveal>
@@ -223,48 +232,57 @@ export default function Dashboard() {
                 Attendance Trends
               </CardTitle>
             </CardHeader>
-            <CardContent>
-              <ChartContainer
-                config={{
-                  present: {
-                    label: "Present",
-                    color: "hsl(var(--success))",
-                  },
-                  absent: {
-                    label: "Absent",
-                    color: "hsl(var(--destructive))",
-                  },
-                }}
-                className="h-[300px]"
-              >
-                <ResponsiveContainer width="100%" height="100%">
-                  <LineChart data={monthlyStats?.chartData || []}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                    <XAxis 
-                      dataKey="date" 
-                      stroke="hsl(var(--muted-foreground))"
-                      fontSize={12}
-                    />
-                    <YAxis stroke="hsl(var(--muted-foreground))" fontSize={12} />
-                    <ChartTooltip content={<ChartTooltipContent />} />
-                    <Legend />
-                    <Line 
-                      type="monotone" 
-                      dataKey="present" 
-                      stroke="hsl(var(--success))" 
-                      strokeWidth={2}
-                      dot={{ fill: "hsl(var(--success))" }}
-                    />
-                    <Line 
-                      type="monotone" 
-                      dataKey="absent" 
-                      stroke="hsl(var(--destructive))" 
-                      strokeWidth={2}
-                      dot={{ fill: "hsl(var(--destructive))" }}
-                    />
-                  </LineChart>
-                </ResponsiveContainer>
-              </ChartContainer>
+            <CardContent className="overflow-x-auto">
+              {isLoadingMonthly ? (
+                <div className="space-y-3">
+                  <Skeleton className="h-[300px] w-full" />
+                </div>
+              ) : (
+                <ChartContainer
+                  config={{
+                    present: {
+                      label: "Present",
+                      color: "hsl(var(--success))",
+                    },
+                    absent: {
+                      label: "Absent",
+                      color: "hsl(var(--destructive))",
+                    },
+                  }}
+                  className="h-[300px] w-full min-w-[300px]"
+                >
+                  <ResponsiveContainer width="100%" height="100%">
+                    <LineChart data={monthlyStats?.chartData || []}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                      <XAxis 
+                        dataKey="date" 
+                        stroke="hsl(var(--muted-foreground))"
+                        fontSize={11}
+                        angle={-45}
+                        textAnchor="end"
+                        height={60}
+                      />
+                      <YAxis stroke="hsl(var(--muted-foreground))" fontSize={11} />
+                      <ChartTooltip content={<ChartTooltipContent />} />
+                      <Legend wrapperStyle={{ fontSize: '12px' }} />
+                      <Line 
+                        type="monotone" 
+                        dataKey="present" 
+                        stroke="hsl(var(--success))" 
+                        strokeWidth={2}
+                        dot={{ fill: "hsl(var(--success))", r: 3 }}
+                      />
+                      <Line 
+                        type="monotone" 
+                        dataKey="absent" 
+                        stroke="hsl(var(--destructive))" 
+                        strokeWidth={2}
+                        dot={{ fill: "hsl(var(--destructive))", r: 3 }}
+                      />
+                    </LineChart>
+                  </ResponsiveContainer>
+                </ChartContainer>
+              )}
             </CardContent>
           </Card>
         </ScrollReveal>
@@ -274,37 +292,47 @@ export default function Dashboard() {
             <CardHeader>
               <CardTitle>Monthly Summary</CardTitle>
             </CardHeader>
-            <CardContent>
-              <ChartContainer
-                config={{
-                  value: {
-                    label: "Days",
-                    color: "hsl(var(--primary))",
-                  },
-                }}
-                className="h-[300px]"
-              >
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart
-                    data={[
-                      { name: "Working Days", value: monthlyStats?.totalDays || 0, fill: "hsl(var(--primary))" },
-                      { name: "Present", value: monthlyStats?.presentDays || 0, fill: "hsl(var(--success))" },
-                      { name: "Absent", value: monthlyStats?.absentDays || 0, fill: "hsl(var(--destructive))" },
-                      { name: "Holidays", value: monthlyStats?.holidays || 0, fill: "hsl(var(--accent))" },
-                    ]}
-                  >
-                    <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                    <XAxis 
-                      dataKey="name" 
-                      stroke="hsl(var(--muted-foreground))"
-                      fontSize={12}
-                    />
-                    <YAxis stroke="hsl(var(--muted-foreground))" fontSize={12} />
-                    <ChartTooltip content={<ChartTooltipContent />} />
-                    <Bar dataKey="value" radius={[8, 8, 0, 0]} />
-                  </BarChart>
-                </ResponsiveContainer>
-              </ChartContainer>
+            <CardContent className="overflow-x-auto">
+              {isLoadingMonthly ? (
+                <div className="space-y-3">
+                  <Skeleton className="h-[300px] w-full" />
+                </div>
+              ) : (
+                <ChartContainer
+                  config={{
+                    value: {
+                      label: "Days",
+                      color: "hsl(var(--primary))",
+                    },
+                  }}
+                  className="h-[300px] w-full min-w-[300px]"
+                >
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart
+                      data={[
+                        { name: "Working Days", value: monthlyStats?.totalDays || 0, fill: "hsl(var(--primary))" },
+                        { name: "Present", value: monthlyStats?.presentDays || 0, fill: "hsl(var(--success))" },
+                        { name: "Absent", value: monthlyStats?.absentDays || 0, fill: "hsl(var(--destructive))" },
+                        { name: "Holidays", value: monthlyStats?.holidays || 0, fill: "hsl(var(--accent))" },
+                      ]}
+                      margin={{ bottom: 20 }}
+                    >
+                      <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                      <XAxis 
+                        dataKey="name" 
+                        stroke="hsl(var(--muted-foreground))"
+                        fontSize={11}
+                        angle={-45}
+                        textAnchor="end"
+                        height={80}
+                      />
+                      <YAxis stroke="hsl(var(--muted-foreground))" fontSize={11} />
+                      <ChartTooltip content={<ChartTooltipContent />} />
+                      <Bar dataKey="value" radius={[8, 8, 0, 0]} />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </ChartContainer>
+              )}
             </CardContent>
           </Card>
         </ScrollReveal>
