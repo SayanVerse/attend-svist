@@ -426,8 +426,8 @@ export default function AttendancePage() {
                             onClick={() => handleStatusChange(student.id, 'present')}
                             disabled={!!holiday}
                             className={cn(
-                              "btn-animated flex-1 text-xs md:text-sm",
-                              isPresent && "bg-success hover:bg-success/80 text-success-foreground"
+                              "btn-animated flex-1 text-xs md:text-sm transition-all duration-300",
+                              isPresent ? "bg-success text-success-foreground hover:bg-success/90 shadow-md" : "hover:border-success/50 hover:text-success"
                             )}
                           >
                             <CheckCircle className="h-3 w-3 md:h-4 md:w-4 mr-1" />
@@ -439,8 +439,8 @@ export default function AttendancePage() {
                             onClick={() => handleStatusChange(student.id, 'absent')}
                             disabled={!!holiday}
                             className={cn(
-                              "btn-animated flex-1 text-xs md:text-sm",
-                              isAbsent && "bg-accent hover:bg-accent/80 text-accent-foreground"
+                              "btn-animated flex-1 text-xs md:text-sm transition-all duration-300",
+                              isAbsent ? "bg-accent text-accent-foreground hover:bg-accent/90 shadow-md" : "hover:border-accent/50 hover:text-accent"
                             )}
                           >
                             <XCircle className="h-3 w-3 md:h-4 md:w-4 mr-1" />

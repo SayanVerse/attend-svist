@@ -26,7 +26,7 @@ All colors MUST be HSL.
     --muted: 240 5% 96%;
     --muted-foreground: 240 4% 46%;
 
-    --accent: 340 82% 52%;
+    --accent: 25 95% 53%;
     --accent-foreground: 0 0% 100%;
 
     --destructive: 0 84% 60%;
@@ -86,7 +86,7 @@ All colors MUST be HSL.
     --muted: 240 6% 14%;
     --muted-foreground: 240 5% 65%;
 
-    --accent: 340 82% 52%;
+    --accent: 25 95% 53%;
     --accent-foreground: 0 0% 100%;
 
     --destructive: 0 84% 60%;
@@ -121,7 +121,7 @@ All colors MUST be HSL.
   }
 
   body {
-    @apply bg-background text-foreground font-baloo;
+    @apply bg-background text-foreground font-inter;
   }
   
 html {

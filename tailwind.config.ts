@@ -14,7 +14,8 @@ export default {
     },
     extend: {
       fontFamily: {
-        'baloo': ['Baloo Bhai 2', 'cursive'],
+        'inter': ['Inter', 'sans-serif'],
+        'sans': ['Inter', 'sans-serif'],
       },
       colors: {
         border: "hsl(var(--border))",
