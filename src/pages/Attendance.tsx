@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
+import { Skeleton } from "@/components/ui/skeleton";
 import {
   Select,
   SelectContent,
@@ -348,7 +349,26 @@ export default function AttendancePage() {
 
       {/* Student List */}
       {isLoading ? (
-        <div className="text-center py-12">Loading students...</div>
+        <div className="grid gap-3">
+          {[...Array(8)].map((_, i) => (
+            <Card key={i} className="glass-card rounded-[1.5rem]">
+              <CardContent className="pt-4 pb-4">
+                <div className="space-y-3">
+                  <div className="flex justify-between items-start">
+                    <div className="flex-1 space-y-2">
+                      <Skeleton className="h-4 w-[180px]" />
+                      <Skeleton className="h-3 w-[120px]" />
+                    </div>
+                  </div>
+                  <div className="flex gap-2">
+                    <Skeleton className="h-9 flex-1" />
+                    <Skeleton className="h-9 flex-1" />
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
       ) : holiday ? (
         <div className="text-center py-8 text-muted-foreground">
           <p>No attendance marking on holidays</p>
@@ -407,7 +427,7 @@ export default function AttendancePage() {
                             disabled={!!holiday}
                             className={cn(
                               "btn-animated flex-1 text-xs md:text-sm",
-                              isPresent && "bg-success hover:bg-success/90"
+                              isPresent && "bg-success hover:bg-success/80 text-success-foreground"
                             )}
                           >
                             <CheckCircle className="h-3 w-3 md:h-4 md:w-4 mr-1" />
@@ -420,7 +440,7 @@ export default function AttendancePage() {
                             disabled={!!holiday}
                             className={cn(
                               "btn-animated flex-1 text-xs md:text-sm",
-                              isAbsent && "bg-destructive hover:bg-destructive/90"
+                              isAbsent && "bg-accent hover:bg-accent/80 text-accent-foreground"
                             )}
                           >
                             <XCircle className="h-3 w-3 md:h-4 md:w-4 mr-1" />

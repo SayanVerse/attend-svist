@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
 import {
   Dialog,
   DialogContent,
@@ -253,7 +254,26 @@ export default function StudentsPage() {
       </div>
 
       {isLoading ? (
-        <div className="text-center py-12">Loading students...</div>
+        <div className="grid gap-3">
+          {[...Array(6)].map((_, i) => (
+            <Card key={i} className="glass-card rounded-[1.5rem]">
+              <CardContent className="pt-4 pb-4">
+                <div className="flex items-start gap-3">
+                  <Skeleton className="h-10 w-10 rounded-full flex-shrink-0" />
+                  <div className="flex-1 space-y-2">
+                    <Skeleton className="h-4 w-[200px]" />
+                    <Skeleton className="h-3 w-[150px]" />
+                    <Skeleton className="h-3 w-[120px]" />
+                  </div>
+                  <div className="flex gap-2">
+                    <Skeleton className="h-8 w-16" />
+                    <Skeleton className="h-8 w-16" />
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
       ) : filteredStudents && filteredStudents.length > 0 ? (
         <AnimatePresence mode="popLayout">
           <div className="grid gap-3">

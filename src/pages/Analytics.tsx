@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Skeleton } from "@/components/ui/skeleton";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import {
@@ -39,7 +40,7 @@ export default function AnalyticsPage() {
   const monthEndStr = format(endOfMonth(selectedMonth), "yyyy-MM-dd");
   const currentDate = format(selectedDate, "yyyy-MM-dd");
 
-  const { data: students } = useQuery({
+  const { data: students, isLoading: isLoadingStudents } = useQuery({
     queryKey: ["students"],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -51,7 +52,7 @@ export default function AnalyticsPage() {
     },
   });
 
-  const { data: totalSummary } = useQuery({
+  const { data: totalSummary, isLoading: isLoadingTotal } = useQuery({
     queryKey: ["analytics-total", monthStartStr, monthEndStr],
     queryFn: async () => {
       const { data: attendance } = await supabase
@@ -138,7 +139,7 @@ export default function AnalyticsPage() {
     enabled: viewMode === "total",
   });
 
-  const { data: datewiseAttendance } = useQuery({
+  const { data: datewiseAttendance, isLoading: isLoadingDatewise } = useQuery({
     queryKey: ["analytics-datewise", currentDate],
     queryFn: async () => {
       const { data: attendance } = await supabase
@@ -332,7 +333,33 @@ export default function AnalyticsPage() {
 
       {/* Results */}
       <div className="grid gap-3">
-        {viewMode === "total" && displayData.map((student: any, index) => (
+        {(viewMode === "total" && isLoadingTotal) || (viewMode === "datewise" && isLoadingDatewise) ? (
+          <>
+            {[...Array(6)].map((_, i) => (
+              <Card key={i} className="glass-card rounded-[1.5rem]">
+                <CardHeader className="pb-3">
+                  <div className="flex justify-between items-start gap-2">
+                    <div className="flex-1 space-y-2">
+                      <Skeleton className="h-4 w-[200px]" />
+                      <Skeleton className="h-3 w-[120px]" />
+                    </div>
+                    <Skeleton className="h-8 w-16" />
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-3">
+                    <div className="flex gap-4">
+                      <Skeleton className="h-4 w-20" />
+                      <Skeleton className="h-4 w-20" />
+                      <Skeleton className="h-4 w-20" />
+                    </div>
+                    <Skeleton className="h-2 w-full rounded-full" />
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </>
+        ) : viewMode === "total" && displayData.map((student: any, index) => (
           <motion.div
             key={student.id}
             initial={{ opacity: 0, y: 20 }}
