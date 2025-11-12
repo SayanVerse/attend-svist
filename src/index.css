@@ -127,29 +127,54 @@ All colors MUST be HSL.
 html {
   scroll-behavior: smooth;
   scroll-padding-top: 2rem;
+  overflow-x: hidden;
 }
 
 body {
   overflow-x: hidden;
+  transition: background-color 0.3s ease;
 }
 
 * {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  box-sizing: border-box;
+}
+
+*::before,
+*::after {
+  box-sizing: border-box;
 }
 }
 
 @layer components {
   .glass-card {
-    @apply backdrop-blur-xl bg-white/70 dark:bg-card/70 border border-white/30 shadow-lg rounded-[2rem];
+    @apply backdrop-blur-xl bg-white/70 dark:bg-card/70 border border-white/30 shadow-lg rounded-[2rem] transition-all duration-300 hover:shadow-xl;
   }
   
   .glass-button {
-    @apply backdrop-blur-md bg-white/40 dark:bg-card/40 border border-white/30 shadow-md rounded-full hover:bg-white/60 dark:hover:bg-card/60 transition-all duration-300;
+    @apply backdrop-blur-md bg-white/40 dark:bg-card/40 border border-white/30 shadow-md rounded-full hover:bg-white/60 dark:hover:bg-card/60 transition-all duration-300 hover:shadow-lg;
   }
   
   .btn-animated {
-    @apply transition-all duration-300 hover:scale-105 active:scale-95 rounded-full;
+    @apply transition-all duration-300 rounded-full;
+  }
+  
+  /* Smooth link transitions */
+  a {
+    @apply transition-colors duration-200;
+  }
+  
+  /* Input smooth focus */
+  input,
+  textarea,
+  select {
+    @apply transition-all duration-200;
+  }
+  
+  /* Card hover effects */
+  [class*="card"] {
+    @apply transition-all duration-300;
   }
   
   .scrollbar-hide {

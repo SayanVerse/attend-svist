@@ -3,6 +3,7 @@ import { ClipboardList, LogOut } from "lucide-react";
 import { ThemeToggle } from "./ThemeToggle";
 import { Footer } from "./Footer";
 import { ScrollToTop } from "./ScrollToTop";
+import { PageTransition } from "./PageTransition";
 import { motion } from "framer-motion";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "./AppSidebar";
@@ -56,7 +57,9 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
           </motion.header>
 
           <div className="container px-4 py-6 flex-1">
-            <main>{children}</main>
+            <main>
+              <PageTransition>{children}</PageTransition>
+            </main>
             <Footer />
           </div>
         </div>
